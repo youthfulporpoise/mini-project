@@ -1,4 +1,5 @@
 "use client";
+import { QuotationRequest, Transaction, VendorResponse } from "../utility";
 import {
   PieChart,
   Pie,
@@ -13,34 +14,7 @@ import {
   Legend,
 } from "recharts";
 
-// Updated TypeScript Interfaces
-interface QuotationRequest {
-  client_id: string;
-  quotation_id: string;
-  requirements: string;
-  status: "Pending" | "Approved" | "Rejected" | "Under Review";
-  product_category: string;
-  created_date: string;
-  approved_amount?: number;
-}
 
-interface VendorResponse {
-  vendor_id: string;
-  quotation_id: string;
-  vendor_name: string;
-  description: string;
-  amount: number;
-  submitted_date: string;
-}
-
-interface Transaction {
-  transaction_id: string;
-  quotation_id: string;
-  payment_status: "Paid" | "Pending" | "Processing" | "Failed";
-  amount: number;
-  transaction_date: string;
-  vendor_name: string;
-}
 
 // Sample Data
 const   quotationRequests: QuotationRequest[] = [

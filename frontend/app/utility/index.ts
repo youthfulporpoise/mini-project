@@ -12,39 +12,30 @@ export interface menuItem {
 
 // Dashboard 
 
-export interface MonthlyTrend {
-  month: string;
-  expenses: number;
-  quotations: number;
-  approved: number;
+export interface QuotationRequest {
+  client_id: string;
+  quotation_id: string;
+  requirements: string;
+  status: "Pending" | "Approved" | "Rejected" | "Under Review";
+  product_category: string;
+  created_date: string;
+  approved_amount?: number;
 }
 
-export interface ExpenseCategory {
-  category: string;
+export interface VendorResponse {
+  vendor_id: string;
+  quotation_id: string;
+  vendor_name: string;
+  description: string;
   amount: number;
-  color: string;
-  percentage: number;
+  submitted_date: string;
 }
 
-export interface QuotationStatus {
-  status: string;
-  count: number;
-  value: number;
-  color: string;
-}
-
-export interface RecentExpense {
-  item: string;
-  category: string;
-  date: string;
+export interface Transaction {
+  transaction_id: string;
+  quotation_id: string;
+  payment_status: "Paid" | "Pending" | "Processing" | "Failed";
   amount: number;
-  vendor: string;
-}
-
-export interface PendingQuotation {
-  item: string;
-  vendor: string;
-  amount: number;
-  requestDate: string;
-  status: string;
+  transaction_date: string;
+  vendor_name: string;
 }
