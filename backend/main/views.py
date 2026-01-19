@@ -1,3 +1,6 @@
 from django.shortcuts import render
 
-# Create your views here.
+from rest_framework import generics, renderers
+from rest_framework.response import Response
+
+from main.models import Vendor, Client, Quotation, QuotationResponse, QuotationAccepted
