@@ -13,21 +13,17 @@ interface QuotationItem {
   id: string;
   itemName: string;
   description: string;
-  technicalSpecs: string;
-  quantity: string;
-  unit: string;
-  qualityRequirements: string;
+  amount: number;
 }
 
 interface QuotationFormData {
-  quotationId: string;
+  id: string;
+  category: string;
   quotationTitle: string;
-  referenceNumber: string;
+  description: string;
   department: string;
-  createdBy: string;
-  createdById: string;
-  issueDate: string;
   submissionDeadline: string;
+  status: "approved" | "pending" | "rejected";
   deliveryPeriod: string;
   items: QuotationItem[];
 }
@@ -80,40 +76,26 @@ function FormSection({
 }
 
 export default function QuotationRequestForm() {
-  const generateQuotationId = () => {
-    const date = new Date();
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const random = Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, "0");
-    return `QR-${year}${month}-${random}`;
-  };
-
   const [expandedSections, setExpandedSections] = useState({
     basic: true,
     items: true,
   });
 
   const [formData, setFormData] = useState<QuotationFormData>({
-    quotationId: generateQuotationId(),
+    id: "",
+    category: "",
     quotationTitle: "",
-    referenceNumber: "",
+    description: "",
     department: "",
-    createdBy: "",
-    createdById: "",
-    issueDate: new Date().toISOString().split("T")[0],
     submissionDeadline: "",
     deliveryPeriod: "",
+    status: "pending",
     items: [
       {
-        id: "1",
+        id: "",
         itemName: "",
         description: "",
-        technicalSpecs: "",
-        quantity: "",
-        unit: "Nos",
-        qualityRequirements: "",
+        amount: 0,
       },
     ],
   });
@@ -138,13 +120,10 @@ export default function QuotationRequestForm() {
 
   const addItem = () => {
     const newItem: QuotationItem = {
-      id: Date.now().toString(),
+      id: "",
       itemName: "",
       description: "",
-      technicalSpecs: "",
-      quantity: "",
-      unit: "Nos",
-      qualityRequirements: "",
+      amount: 0,
     };
     setFormData((prev) => ({
       ...prev,
@@ -210,23 +189,9 @@ export default function QuotationRequestForm() {
         required
       >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div>
-            <label className="block mb-2">
-              Quotation ID <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              name="quotationId"
-              value={formData.quotationId}
-              disabled
-              className="w-full px-4 py-2.5 bg-gray-100 border border-gray-300 rounded-lg"
-            />
-            <p className="text-xs text-gray-500 mt-1">Auto-generated</p>
-          </div>
-
           <div className="md:col-span-2">
             <label className="block mb-2">
-              Quotation Title / Subject <span className="text-red-600">*</span>
+              Quotation Title <span className="text-red-600">*</span>
             </label>
             <input
               type="text"
@@ -241,22 +206,7 @@ export default function QuotationRequestForm() {
 
           <div>
             <label className="block mb-2">
-              Reference Number <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              name="referenceNumber"
-              value={formData.referenceNumber}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              placeholder="Official institutional reference"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">
-              Department / Section <span className="text-red-600">*</span>
+              Department <span className="text-red-600">*</span>
             </label>
             <select
               name="department"
@@ -279,55 +229,25 @@ export default function QuotationRequestForm() {
 
           <div>
             <label className="block mb-2">
-              Created By (Name) <span className="text-red-600">*</span>
+              Category
+              <span className="text-red-600">*</span>
             </label>
             <input
-              type="text"
-              name="createdBy"
-              value={formData.createdBy}
+              name="category"
+              value={formData.category}
               onChange={handleChange}
-              required
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              placeholder="Manager / Officer name"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">
-              Employee ID <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="text"
-              name="createdById"
-              value={formData.createdById}
-              onChange={handleChange}
-              required
-              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-              placeholder="Employee ID"
-            />
-          </div>
-
-          <div>
-            <label className="block mb-2">
-              Issue Date <span className="text-red-600">*</span>
-            </label>
-            <input
-              type="date"
-              name="issueDate"
-              value={formData.issueDate}
-              onChange={handleChange}
+              placeholder="eg., Software, Lab"
               required
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
-
           <div>
             <label className="block mb-2">
               Last Date & Time for Submission{" "}
               <span className="text-red-600">*</span>
             </label>
             <input
-              type="datetime-local"
+              type="date"
               name="submissionDeadline"
               value={formData.submissionDeadline}
               onChange={handleChange}
@@ -348,6 +268,18 @@ export default function QuotationRequestForm() {
               required
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               placeholder="e.g., Within 15 days of order"
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block mb-2">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) =>
+                updateItem(formData.id, "description", e.target.value)
+              }
+              rows={3}
+              className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
+              placeholder="Quotation details"
             />
           </div>
         </div>
@@ -397,86 +329,32 @@ export default function QuotationRequestForm() {
                   />
                 </div>
 
-                <div>
-                  <label className="block mb-2">
-                    Description <span className="text-red-600">*</span>
-                  </label>
-                  <input
-                    type="text"
+                <div className="md:col-span-2">
+                  <label className="block mb-2">Description</label>
+                  <textarea
                     value={item.description}
                     onChange={(e) =>
                       updateItem(item.id, "description", e.target.value)
-                    }
-                    required
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="Brief description"
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block mb-2">Technical Specifications</label>
-                  <textarea
-                    value={item.technicalSpecs}
-                    onChange={(e) =>
-                      updateItem(item.id, "technicalSpecs", e.target.value)
                     }
                     rows={3}
                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
                     placeholder="Brand, model, standards, compliance details"
                   />
                 </div>
-
-                <div>
-                  <label className="block mb-2">
-                    Quantity <span className="text-red-600">*</span>
+                <div className="w-full max-w-md">
+                  <label className="block mb-2 text-gray-700 font-medium">
+                    Amount <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="number"
-                    value={item.quantity}
+                    value={item.amount}
                     onChange={(e) =>
-                      updateItem(item.id, "quantity", e.target.value)
+                      updateItem(item.id, "amount", e.target.value)
                     }
                     required
                     min="1"
                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="Enter quantity"
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-2">
-                    Unit of Measurement <span className="text-red-600">*</span>
-                  </label>
-                  <select
-                    value={item.unit}
-                    onChange={(e) =>
-                      updateItem(item.id, "unit", e.target.value)
-                    }
-                    required
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                  >
-                    <option value="Nos">Nos (Numbers)</option>
-                    <option value="Kg">Kg (Kilogram)</option>
-                    <option value="Litre">Litre</option>
-                    <option value="Set">Set</option>
-                    <option value="Box">Box</option>
-                    <option value="Meter">Meter</option>
-                    <option value="Pack">Pack</option>
-                  </select>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block mb-2">
-                    Quality / Compliance Requirements
-                  </label>
-                  <input
-                    type="text"
-                    value={item.qualityRequirements}
-                    onChange={(e) =>
-                      updateItem(item.id, "qualityRequirements", e.target.value)
-                    }
-                    className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                    placeholder="e.g., ISO certified, BIS standard, 3-year warranty"
+                    placeholder="Enter Amount"
                   />
                 </div>
               </div>
