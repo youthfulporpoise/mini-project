@@ -1,0 +1,159 @@
+"use client";
+import { FileText, Clock, CheckCircle, XCircle, Eye } from "lucide-react";
+
+import { Sidebar } from "../components/Sidebar";
+import { quotations } from "../SampleData";
+import { useRouter } from "next/navigation";
+import QuotationRequestForm from "../components/QuotationRequestForm";
+
+const getStatusConfig = (status: string) => {
+  switch (status) {
+    case "approved":
+      return {
+        label: "Approved",
+        color: "bg-green-100 text-green-700",
+        icon: CheckCircle,
+        iconColor: "text-green-600",
+      };
+    case "pending":
+      return {
+        label: "Pending Review",
+        color: "bg-yellow-100 text-yellow-700",
+        icon: Clock,
+        iconColor: "text-yellow-600",
+      };
+    case "rejected":
+      return {
+        label: "Rejected",
+        color: "bg-red-100 text-red-700",
+        icon: XCircle,
+        iconColor: "text-red-600",
+      };
+    default:
+      return {
+        label: "Unknown",
+        color: "bg-gray-100 text-gray-700",
+        icon: FileText,
+        iconColor: "text-gray-600",
+      };
+  }
+};
+
+export default function Page() {
+  const router = useRouter();
+
+  return (
+    <div className="flex flex-row ">
+      <Sidebar />
+      <div className="space-y-6 p-5 overflow-y-scroll h-screen w-[80vw] items-center">
+        <QuotationRequestForm/>
+        {/* Quotations Table */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Quotation Requests
+            </h3>
+            <div className="flex gap-2">
+              <select className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="all">All Status</option>
+                <option value="pending">Pending Review</option>
+                <option value="approved">Approved</option>
+                <option value="rejected">Rejected</option>
+              </select>
+              <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
+                New Quotation
+              </button>
+            </div>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Quotation ID
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Vendor
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Department
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Description
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Amount
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Valid Until
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Status
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {quotations.map((quotation) => {
+                  const statusConfig = getStatusConfig(quotation.status);
+                  const StatusIcon = statusConfig.icon;
+
+                  return (
+                    <tr
+                      key={quotation.id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                        {quotation.id}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-900">
+                        {quotation.vendor}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {quotation.department}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {quotation.description}
+                      </td>
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900">
+                        {quotation.amount}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-600">
+                        {quotation.validUntil}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <StatusIcon
+                            className={`w-4 h-4 ${statusConfig.iconColor}`}
+                          />
+                          <span
+                            className={`px-2 py-1 text-xs rounded-full ${statusConfig.color}`}
+                          >
+                            {statusConfig.label}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <button
+                          onClick={() => router.push(`Quotations/${quotation.id}`)}
+                          className="text-blue-600 hover:text-blue-700 p-1"
+                        >
+                          <Eye className="w-5 h-5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+
+  
+      </div>
+    </div>
+  );
+}

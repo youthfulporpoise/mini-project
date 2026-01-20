@@ -39,3 +39,14 @@ export interface Transaction {
   transaction_date: string;
   vendor_name: string;
 }
+
+
+export interface QuotationRequestForm {
+  client_id: string;
+  quotation_id: string;
+  requirements: string;
+  status: "Pending" | "Approved" | "Rejected" | "Under Review";
+  product_category: string;
+  created_date: string;
+  approved_amount?: number;
+}

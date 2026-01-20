@@ -28,7 +28,7 @@ const menuItems: menuItem[]  = [
 
 export function Sidebar() {
   return (
-    <aside className="w-64 bg-gray-900 text-white p-6 h-screen min-h-fit overflow-hidden">
+    <aside className="w-64 bg-gray-900 text-white p-6 h-screen min-h-fit overflow-hidden ">
       <div className="mb-8 ">
         <div className="flex items-center gap-2">
           <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
