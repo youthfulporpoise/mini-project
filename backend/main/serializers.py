@@ -1,32 +1,35 @@
 from rest_framework import serializers
-from main.models import Vendor, Client, Quotation, QuotationResponse, QuotationAccepted
+from main.models import Vendor, Quotation, QuotationResponse, QuotationAccepted
 
 
-class VendorSerializer(serializers.HyperlinkedModelSerializer):
+class VendorSerializer(serializers.ModelSerializer):
   class Meta:
     model = Vendor
-    fields = ["url", "name"]
+    fields = ["id", "name", "address", "email"]
 
 
-class ClientSerializer(serializers.HyperlinkedModelSerializer):
-  class Meta:
-    model = Client
-    fields = ["url", "name"]
-
-
-class QuotationSerializer(serializers.HyperlinkedSerializer):
+class QuotationSerializer(serializers.ModelSerializer):
   class Meta:
     model = Quotation
-    fields = ["url", "title", "client"]
+    fields = [
+      "id",
+      "title",
+      "department",
+      "description",
+      "amount",
+      "submission_deadline",
+      "status",
+      "approved"
+      ]
 
 
-class QuotationResponseSerializer(serializers.HyperlinkedSerializer):
+class QuotationResponseSerializer(serializers.ModelSerializer):
   class Meta:
     model = QuotationResponse
-    fields = ["url", "quotation", "vendor"]
+    fields = ["id", "quotation", "vendor", "amount"]
 
 
-class QuotationAccepted(serializers.HyperlinkedSerializer):
+class QuotationAcceptedSerializer(serializers.ModelSerializer):
   class Meta:
     model = QuotationAccepted
-    fields = ["url", "quotation", "response"]
+    fields = ["id", "quotation", "response"]
