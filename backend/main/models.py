@@ -26,3 +26,10 @@ class QuotationResponse(models.Model):
 class QuotationAccepted(models.Model):
   quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
   response = models.ForeignKey(QuotationResponse, on_delete=models.CASCADE)
+
+
+class Item(models.Model):
+  name = models.CharField(max_length=128)
+  description = models.CharField(max_length=512)
+  amount = models.IntegerField()
+  quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name="items")
