@@ -4,10 +4,11 @@ import { Sidebar } from "../components/Sidebar";
 import { format, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
 import QuotationRequestForm from "../components/QuotationRequestForm";
-import { useEffect, useState } from "react";
+import {  useEffect, useState } from "react";
 import { BACKEND_URL } from "../utility";
 import axios from "axios";
-import { Quotation } from "../utility";
+import { Quotation } from "../utility/index";
+import { useQuotation } from "../context/QuotatationContext";
 
 const getStatusConfig = (status: number) => {
   switch (status) {
@@ -44,7 +45,7 @@ const getStatusConfig = (status: number) => {
 
 export default function Page() {
   const [data, setData] = useState<Quotation[]>([]);
-
+  const { setSelectedQuotation } = useQuotation();
   const formatDate = (dateString: string) => {
     return format(parseISO(dateString), "MMMM dd, yyyy");
   };
@@ -156,9 +157,10 @@ export default function Page() {
                       </td>
                       <td className="py-3 px-4">
                         <button
-                          onClick={() =>
-                            router.push(`Quotations/${quotation.id}`)
-                          }
+                          onClick={() => {
+                            router.push(`Quotations/${quotation.id}`);
+                            setSelectedQuotation(quotation);
+                          }}
                           className="text-blue-600 hover:text-blue-700 p-1"
                         >
                           <Eye className="w-5 h-5" />
