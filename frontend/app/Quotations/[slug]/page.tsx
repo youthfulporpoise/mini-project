@@ -62,12 +62,6 @@ export default function Page() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="space-y-4">
                         <div>
-                          <p className="text-sm text-gray-600 mb-1">Vendor</p>
-                          <p className="text-base font-medium text-gray-900">
-                            {quotation.vendor}
-                          </p>
-                        </div>
-                        <div>
                           <p className="text-sm text-gray-600 mb-1">
                             Department
                           </p>
@@ -88,7 +82,7 @@ export default function Page() {
                             Number of Items
                           </p>
                           <p className="text-base font-medium text-gray-900">
-                            {quotation.items}
+                            {quotation.items.length}
                           </p>
                         </div>
                       </div>

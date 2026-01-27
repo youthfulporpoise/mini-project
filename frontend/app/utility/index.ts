@@ -50,3 +50,45 @@ export interface QuotationRequestForm {
   created_date: string;
   approved_amount?: number;
 }
+
+export interface Quotation {
+  id: number;
+  category: string;
+  title: string;
+  department: string;
+  description: string;
+  submission_deadline: string;
+  delivery_period : string; 
+  amount: number;
+  approved: boolean;
+  status: number;
+}
+
+
+// // Quotations 
+// export interface Quotations {
+//   amount
+// : 
+// 50000
+// approved
+// : 
+// false
+// department
+// : 
+// "Electronics and Communication Engineering"
+// description
+// : 
+// "(1) Raspberry Pi Zero 200 No.\r\nrefurbished Raspberry Pi Zeroes without any mechanical, electronic, or apparent are acceptable"
+// id
+// : 
+// 1
+// status
+// : 
+// 0
+// submission_deadline
+// : 
+// "2026-06-25T00:00:00Z"
+// title
+// : 
+// "Purcha
+// }

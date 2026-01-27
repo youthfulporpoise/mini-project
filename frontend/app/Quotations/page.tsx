@@ -1,28 +1,31 @@
 "use client";
 import { FileText, Clock, CheckCircle, XCircle, Eye } from "lucide-react";
-
 import { Sidebar } from "../components/Sidebar";
-import { quotations } from "../SampleData";
+import { format, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
 import QuotationRequestForm from "../components/QuotationRequestForm";
+import { useEffect, useState } from "react";
+import { BACKEND_URL } from "../utility";
+import axios from "axios";
+import { Quotation } from "../utility";
 
-const getStatusConfig = (status: string) => {
+const getStatusConfig = (status: number) => {
   switch (status) {
-    case "approved":
+    case 1:
       return {
         label: "Approved",
         color: "bg-green-100 text-green-700",
         icon: CheckCircle,
         iconColor: "text-green-600",
       };
-    case "pending":
+    case 0:
       return {
         label: "Pending Review",
         color: "bg-yellow-100 text-yellow-700",
         icon: Clock,
         iconColor: "text-yellow-600",
       };
-    case "rejected":
+    case 2:
       return {
         label: "Rejected",
         color: "bg-red-100 text-red-700",
@@ -40,6 +43,32 @@ const getStatusConfig = (status: string) => {
 };
 
 export default function Page() {
+  const [data, setData] = useState<Quotation[]>([]);
+
+  const formatDate = (dateString: string) => {
+    return format(parseISO(dateString), "MMMM dd, yyyy");
+  };
+
+  const getQuotations = async () => {
+    try {
+      const url = `${BACKEND_URL}/qt/`;
+      const options = {
+        headers: {
+          "Content-Type": "Application/json",
+        },
+      };
+      const response = await axios.get(url, options);
+      const data = await response.data;
+      setData(data);
+    } catch {
+      console.log("Error");
+    }
+  };
+
+  useEffect(() => {
+    getQuotations();
+  }, []);
+
   const router = useRouter();
 
   const getQuotationTotal = (items: { amount: number }[]) => {
@@ -57,7 +86,6 @@ export default function Page() {
             <h3 className="text-lg font-semibold text-gray-900">
               Quotation Requests
             </h3>
-       
           </div>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -88,7 +116,7 @@ export default function Page() {
                 </tr>
               </thead>
               <tbody>
-                {quotations.map((quotation) => {
+                {data.map((quotation) => {
                   const statusConfig = getStatusConfig(quotation.status);
                   const StatusIcon = statusConfig.icon;
 
@@ -108,11 +136,11 @@ export default function Page() {
                         {quotation.description}
                       </td>
                       <td className="py-3 px-4 text-sm font-medium text-gray-900">
-                        ₹{getQuotationTotal(quotation.items).toLocaleString()}
+                        ₹{getQuotationTotal(quotation.items)}
                       </td>
 
                       <td className="py-3 px-4 text-sm text-gray-600">
-                        {quotation.submissionDeadline}
+                        {formatDate(quotation.submission_deadline)}
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
