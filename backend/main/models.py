@@ -1,4 +1,10 @@
 from django.db import models
+from django.utils import timezone
+from datetime import timedelta
+
+
+def submission_deadline_default():
+  return timezone.now() + timedelta(days=7)
 
 
 class Vendor(models.Model):
@@ -11,10 +17,10 @@ class Quotation(models.Model):
   title = models.CharField(max_length=512)
   department = models.CharField(max_length=512)
   description = models.TextField()
-  amount = models.IntegerField()
-  submission_deadline = models.DateTimeField()
+  category = models.CharField(max_length=128, default="Administrative")
+  submission_deadline = models.DateTimeField(default=submission_deadline_default)
   status = models.IntegerField()
-  approved = models.BooleanField(default=False)
+  delivery_period = models.DurationField(default=timedelta(days=28))
 
 
 class QuotationResponse(models.Model):
@@ -32,4 +38,8 @@ class Item(models.Model):
   name = models.CharField(max_length=128)
   description = models.CharField(max_length=512)
   amount = models.IntegerField()
-  quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE, related_name="items")
+  quotation = models.ForeignKey(
+    Quotation,
+    on_delete=models.CASCADE,
+    related_name="items",
+  )
