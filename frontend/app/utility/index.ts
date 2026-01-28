@@ -51,6 +51,14 @@ export interface QuotationRequestForm {
   approved_amount?: number;
 }
 
+export interface QuotationItems {
+  id : number ; 
+  name : string ; 
+  description : string ; 
+  amount : number ; 
+
+}
+
 export interface Quotation {
   id: number;
   category: string;
@@ -62,6 +70,7 @@ export interface Quotation {
   amount: number;
   approved: boolean;
   status: number;
+  items: QuotationItems[]; 
 }
 
 

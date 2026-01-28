@@ -8,7 +8,14 @@ interface QuotationContextType {
   setSelectedQuotation: (quotation: Quotation | null) => void;
 }
 
-const QuotationContext = createContext<QuotationContextType | null>(null);
+const initialQuotationState: QuotationContextType = {
+  selectedQuotation: null,
+  setSelectedQuotation: () => {},
+};
+
+const QuotationContext = createContext<QuotationContextType>(
+  initialQuotationState,
+);
 
 export function QuotationProvider({ children }: { children: ReactNode }) {
   const [selectedQuotation, setSelectedQuotation] = useState<Quotation | null>(

@@ -1,9 +1,9 @@
 "use client";
 import { FileText, Clock, CheckCircle, XCircle } from "lucide-react";
-import { quotations } from "@/app/SampleData";
 import { useParams } from "next/navigation";
 import { Sidebar } from "@/app/components/Sidebar";
-import { useQuotation } from "@/app/context/QuotatationContext";
+import { useQuotation } from "@/app/context/QuotationContext";
+import { parseISO, format } from "date-fns";
 
 const getStatusConfig = (status: number) => {
   switch (status) {
@@ -37,6 +37,10 @@ const getStatusConfig = (status: number) => {
       };
   }
 };
+
+const formatDate = (dateString: string) => {
+  return format(parseISO(dateString), "MMMM dd, yyyy");
+};
 export default function Page() {
   const context = useQuotation();
   const quotation = context?.selectedQuotation;
@@ -44,7 +48,7 @@ export default function Page() {
   const searchParams = useParams();
   if (!searchParams) return null;
   const currentQuotation = searchParams.slug;
-  const statusConfig = getStatusConfig(quotation.status);
+  const statusConfig = getStatusConfig(quotation!.status);
   const StatusIcon = statusConfig.icon;
 
   return (
@@ -85,15 +89,9 @@ export default function Page() {
                   </div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-600 mb-1">Request Date</p>
-                      <p className="text-base font-medium text-gray-900">
-                        {quotation.requestDate}
-                      </p>
-                    </div>
-                    <div>
                       <p className="text-sm text-gray-600 mb-1">Valid Until</p>
                       <p className="text-base font-medium text-gray-900">
-                        {quotation.validUntil}
+                        {formatDate(quotation.submission_deadline)}
                       </p>
                     </div>
                     <div>
@@ -120,7 +118,7 @@ export default function Page() {
                   </div>
                 </div>
                 <div className="mt-6 flex gap-3">
-                  {quotation.status === "pending" && (
+                  {quotation.status === 0 && (
                     <>
                       <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
                         Approve Quotation

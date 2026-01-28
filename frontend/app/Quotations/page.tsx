@@ -8,7 +8,7 @@ import {  useEffect, useState } from "react";
 import { BACKEND_URL } from "../utility";
 import axios from "axios";
 import { Quotation } from "../utility/index";
-import { useQuotation } from "../context/QuotatationContext";
+import { useQuotation } from "../context/QuotationContext";
 
 const getStatusConfig = (status: number) => {
   switch (status) {
@@ -50,23 +50,22 @@ export default function Page() {
     return format(parseISO(dateString), "MMMM dd, yyyy");
   };
 
-  const getQuotations = async () => {
-    try {
-      const url = `${BACKEND_URL}/qt/`;
-      const options = {
-        headers: {
-          "Content-Type": "Application/json",
-        },
-      };
-      const response = await axios.get(url, options);
-      const data = await response.data;
-      setData(data);
-    } catch {
-      console.log("Error");
-    }
-  };
-
   useEffect(() => {
+    const getQuotations = async () => {
+      try {
+        const url = `${BACKEND_URL}/qt/`;
+        const options = {
+          headers: {
+            "Content-Type": "Application/json",
+          },
+        };
+        const response = await axios.get(url, options);
+
+        setData(response.data);
+      } catch {
+        console.log("Error");
+      }
+    };
     getQuotations();
   }, []);
 
@@ -156,6 +155,7 @@ export default function Page() {
                         </div>
                       </td>
                       <td className="py-3 px-4">
+                       
                         <button
                           onClick={() => {
                             router.push(`Quotations/${quotation.id}`);

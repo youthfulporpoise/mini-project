@@ -1,4 +1,4 @@
-import { QuotationProvider } from "./context/QuotatationContext";
+import { QuotationProvider } from "./context/QuotationContext";
 import "./globals.css";
 
 export default function RootLayout({
