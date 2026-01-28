@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { Sidebar } from "@/app/components/Sidebar";
 import { useQuotation } from "@/app/context/QuotationContext";
 import { parseISO, format } from "date-fns";
+import { QuotationItems } from "../../utility";
 
 const getStatusConfig = (status: number) => {
   switch (status) {
@@ -131,6 +132,60 @@ export default function Page() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Items Grid Section */}
+        {quotation && quotation.items && quotation.items.length > 0 && (
+          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">
+              Items ({quotation.items.length})
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {quotation.items.map((item: QuotationItems, index: number) => (
+                <div
+                  key={item.id || index}
+                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <span className="text-xs font-semibold text-gray-500">
+                      Item #{index + 1}
+                    </span>
+                    <span className="text-lg font-bold text-gray-900">
+                      ₹{item.amount || 0}
+                    </span>
+                  </div>
+
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                    {item.name || "N/A"}
+                  </h4>
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
+                    {item.description || "N/A"}
+                  </h4>
+
+                  <div className="space-y-1 text-sm text-gray-600">
+                    <p>
+                      Unit Price:{" "}
+                      <span className="font-medium">₹{item.amount || 0}</span>
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
+              <div className="text-right">
+                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  ₹
+                  {quotation.items.reduce(
+                    (sum: number, item: QuotationItems) => sum + (item.amount || 0),
+                    0,
+                  )}
+                </p>
+              </div>
+            </div>
           </div>
         )}
       </div>
