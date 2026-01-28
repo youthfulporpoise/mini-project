@@ -15,11 +15,11 @@ class QuotationSerializer(serializers.ModelSerializer):
       "id",
       "title",
       "department",
+      "category",
       "description",
-      "amount",
       "submission_deadline",
       "status",
-      "approved"
+      "delivery_period"
     ]
 
 
@@ -39,6 +39,7 @@ class ItemSerializer(serializers.ModelSerializer):
   quotation = serializers.PrimaryKeyRelatedField(
     queryset=Quotation.objects.all(),
     required=False,
+    write_only=True,
   )
 
   class Meta:
@@ -62,10 +63,10 @@ class QuotationWithItemSerializer(serializers.ModelSerializer):
       "title",
       "department",
       "description",
-      "amount",
+      "category",
       "submission_deadline",
       "status",
-      "approved",
+      "delivery_period",
       "items"
     ]
 
