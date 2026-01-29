@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { Sidebar } from "@/app/components/Sidebar";
 import { useQuotation } from "@/app/context/QuotationContext";
 import { parseISO, format } from "date-fns";
-import { QuotationItems } from "../../utility";
+import { QuotationItems } from "../../utility/index";
 
 const getStatusConfig = (status: number) => {
   switch (status) {

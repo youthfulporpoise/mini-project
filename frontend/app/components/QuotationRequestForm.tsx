@@ -8,11 +8,13 @@ import {
   ChevronDown,
   ChevronUp,
 } from "lucide-react";
+import { BACKEND_URL } from "../utility";
+import axios from "axios";
 
 interface QuotationItem {
   id: string;
   itemName: string;
-  description: string;
+  itemDescription: string;
   amount: number;
 }
 
@@ -23,8 +25,8 @@ interface QuotationFormData {
   description: string;
   department: string;
   submissionDeadline: string;
-  status: "approved" | "pending" | "rejected";
-  deliveryPeriod: string;
+  status: 0 | 1 | 2;
+  deliveryPeriod: number;
   items: QuotationItem[];
 }
 
@@ -88,13 +90,13 @@ export default function QuotationRequestForm() {
     description: "",
     department: "",
     submissionDeadline: "",
-    deliveryPeriod: "",
-    status: "pending",
+    deliveryPeriod: 0,
+    status: 0,
     items: [
       {
         id: "",
         itemName: "",
-        description: "",
+        itemDescription: "",
         amount: 0,
       },
     ],
@@ -122,7 +124,7 @@ export default function QuotationRequestForm() {
     const newItem: QuotationItem = {
       id: "",
       itemName: "",
-      description: "",
+      itemDescription: "",
       amount: 0,
     };
     setFormData((prev) => ({
@@ -153,12 +155,74 @@ export default function QuotationRequestForm() {
     }));
   };
 
-  const handleSubmit = () => {
-    console.log("Quotation Request:", { ...formData, status: "published" });
-    setStatus("published");
-    setTimeout(() => setStatus(null), 3000);
-  };
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
 
+  try {
+    // Camel Case to Snake Case conversion
+    const backendData = {
+      id: formData.id,
+      category: formData.category,
+      title: formData.quotationTitle,
+      description: formData.description,
+      department: formData.department,
+      submission_deadline: formData.submissionDeadline,
+      delivery_period: formData.deliveryPeriod,
+      status: formData.status,
+      items: formData.items.map((item) => ({
+        id: item.id,
+        name: item.itemName,
+        description: item.itemDescription,
+        amount: item.amount,
+      })),
+    };
+    
+         const options = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      };
+    const response = await axios.post(`${BACKEND_URL}/qt/`, backendData, options);
+    console.log("Response:", response.data);
+
+    setStatus("published");
+    
+  
+    setTimeout(() => {
+      setStatus(null);
+      
+      // Reset form data to initial state
+      setFormData({
+        id: "",
+        category: "",
+        quotationTitle: "",
+        description: "",
+        department: "",
+        submissionDeadline: "",
+        deliveryPeriod: 0,
+        status: 0,
+        items: [
+          {
+            id: "1",
+            itemName: "",
+            itemDescription: "",
+            amount: 0,
+          },
+        ],
+      });
+      
+      // Reset sections to expanded
+      setExpandedSections({
+        basic: true,
+        items: true,
+      });
+    }, 3000);
+    
+  } catch (error) {
+    console.error("Error:", error);
+    alert("Failed to submit quotation. Please try again.");
+  }
+};
   if (status) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-8 text-center">
@@ -172,7 +236,7 @@ export default function QuotationRequestForm() {
         </p>
         <div className="bg-gray-100 p-4 rounded-lg inline-block">
           <p className="text-sm">
-            Quotation ID: <strong>{formData.quotationId}</strong>
+            Quotation ID: <strong>{formData.id}</strong>
           </p>
         </div>
       </div>
@@ -273,10 +337,9 @@ export default function QuotationRequestForm() {
           <div className="md:col-span-2">
             <label className="block mb-2">Description</label>
             <textarea
+              name="description"
               value={formData.description}
-              onChange={(e) =>
-                updateItem(formData.id, "description", e.target.value)
-              }
+              onChange={handleChange}
               rows={3}
               className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
               placeholder="Quotation details"
@@ -332,9 +395,9 @@ export default function QuotationRequestForm() {
                 <div className="md:col-span-2">
                   <label className="block mb-2">Description</label>
                   <textarea
-                    value={item.description}
+                    value={item.itemDescription}
                     onChange={(e) =>
-                      updateItem(item.id, "description", e.target.value)
+                      updateItem(item.id, "itemDescription", e.target.value)
                     }
                     rows={3}
                     className="w-full px-4 py-2.5 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 resize-none"
