@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 export default function App() {
   useEffect(() => {
-    redirect("/Overview");
+    redirect("/overview");
   }, []);
 
   return <div></div>;

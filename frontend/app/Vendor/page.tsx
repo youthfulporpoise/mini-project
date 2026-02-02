@@ -179,7 +179,7 @@ export default function Page() {
                       <td className="py-3 px-4">
                         <button
                           onClick={() => {
-                            router.push(`Vendor/Quotations/${quotation.id}`);
+                            router.push(`vendor/quotations/${quotation.id}`);
                           }}
                           className="text-blue-600 hover:text-blue-700 p-1"
                         >

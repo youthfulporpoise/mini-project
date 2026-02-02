@@ -42,7 +42,7 @@ export function Sidebar() {
           const Icon = item.icon;
           return (
             <li key={item.id}>
-              <Link href={`/${item.label}`}>
+              <Link href={`/${(item.label).toLowerCase()}`}>
                 <button
                   type="button"
                   key={item.label}
