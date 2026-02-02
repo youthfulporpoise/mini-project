@@ -3,14 +3,22 @@ from django.shortcuts import render
 from rest_framework import generics, renderers, permissions
 from rest_framework.response import Response
 
-from main.models import Vendor, Quotation, QuotationResponse, QuotationAccepted, Item
+from main.models import   \
+  Vendor,                 \
+  Quotation,              \
+  QuotationResponse,      \
+  QuotationAccepted,      \
+  Item,                   \
+  ResponseItem
+
 from main.serializers import      \
   VendorSerializer,               \
   QuotationSerializer,            \
   QuotationResponseSerializer,    \
   QuotationAcceptedSerializer,    \
   ItemSerializer,                 \
-  QuotationWithItemSerializer
+  QuotationWithItemSerializer,    \
+  ResponseItemSerializer
 
 
 class VendorList(generics.ListCreateAPIView):
@@ -29,6 +37,18 @@ class QuotationResponseList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = QuotationResponse.objects.all()
   serializer_class = QuotationResponseSerializer
+
+
+class QuotationResponseDetail(generics.RetrieveUpdateDestroyAPIView):
+  permission_classes = [permissions.AllowAny]
+  queryset = QuotationResponse.objects.all()
+  serializer_class = QuotationResponseSerializer
+
+
+class ResponseItemList(generics.ListCreateAPIView):
+  permission_classes = [permissions.AllowAny]
+  queryset = ResponseItem.objects.all()
+  serializer_class = ResponseItemSerializer
 
 
 class QuotationAcceptedList(generics.ListCreateAPIView):

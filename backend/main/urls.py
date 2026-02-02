@@ -6,9 +6,11 @@ from main import views
 urlpatterns = [
   path("vendors/", views.VendorList.as_view()),
   path("quotations/", views.QuotationList.as_view()),
-  path("quotations/responses/", views.QuotationResponseList.as_view()),
+  path("responses/", views.QuotationResponseList.as_view()),
+  path("responses/<int:pk>", views.QuotationResponseDetail.as_view()),
   path("quotations/accepted/", views.QuotationAcceptedList.as_view()),
   path("items/", views.ItemList.as_view()),
+  path("ritems/", views.ResponseItemList.as_view()),
   path("quotations/<int:pk>", views.QuotationDetail.as_view()),
   path("qt/", views.QuotationWithItemList.as_view()),
   path("qt/<int:pk>", views.QuotationWithItemDetail.as_view()),

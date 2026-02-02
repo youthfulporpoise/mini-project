@@ -26,7 +26,6 @@ class Quotation(models.Model):
 class QuotationResponse(models.Model):
   quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
   vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
-  amount = models.IntegerField(default=0)
 
 
 class QuotationAccepted(models.Model):
@@ -42,4 +41,18 @@ class Item(models.Model):
     Quotation,
     on_delete=models.CASCADE,
     related_name="items",
+  )
+
+
+class ResponseItem(models.Model):
+  item = models.ForeignKey(Item, on_delete=models.CASCADE, related_name="item_reponses")
+  brand_model = models.CharField(max_length=256)
+  delivery_period = models.DurationField(default=timedelta(days=28))
+  unit_price = models.IntegerField()
+  description = models.CharField(max_length=512)
+  quotation_response = models.ForeignKey(
+    QuotationResponse,
+    on_delete=models.CASCADE,
+    related_name="response_items",
+    default=0
   )

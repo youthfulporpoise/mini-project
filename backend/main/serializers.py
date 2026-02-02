@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from main.models import Vendor, Quotation, QuotationResponse, QuotationAccepted, Item
+from main.models import Vendor, Quotation, QuotationResponse, QuotationAccepted, Item, \
+  ResponseItem
 
 
 class VendorSerializer(serializers.ModelSerializer):
@@ -21,12 +22,6 @@ class QuotationSerializer(serializers.ModelSerializer):
       "status",
       "delivery_period"
     ]
-
-
-class QuotationResponseSerializer(serializers.ModelSerializer):
-  class Meta:
-    model = QuotationResponse
-    fields = ["id", "quotation", "vendor", "amount"]
 
 
 class QuotationAcceptedSerializer(serializers.ModelSerializer):
@@ -78,3 +73,40 @@ class QuotationWithItemSerializer(serializers.ModelSerializer):
       quotation.items.create(**item)
 
     return quotation
+
+
+class ResponseItemSerializer(serializers.ModelSerializer):
+  quotation_response = serializers.PrimaryKeyRelatedField(
+    queryset=QuotationResponse.objects.all(),
+    required=False,
+    write_only=False
+  )
+
+  class Meta:
+    model = ResponseItem
+    fields = [
+      "id",
+      "item",
+      "brand_model",
+      "delivery_period",
+      "unit_price",
+      "description",
+      "quotation_response"
+    ]
+
+
+class QuotationResponseSerializer(serializers.ModelSerializer):
+  response_items = ResponseItemSerializer(many=True)
+
+  class Meta:
+    model = QuotationResponse
+    fields = ["id", "quotation", "vendor", "response_items"]
+
+  def create(self, validated_data):
+    items_data = validated_data.pop("items")
+    quotation_response = QuotationResponse.objects.create(**validated_data)
+
+    for item in items_data:
+      quotation_response.items.create(**item)
+
+    return quotation_response
