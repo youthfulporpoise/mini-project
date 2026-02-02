@@ -1,11 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import {
-  FileText,
-  Clock,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { FileText, Clock, CheckCircle, XCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { Sidebar } from "@/app/components/Vendor/Sidebar";
 import { parseISO, format } from "date-fns";
@@ -66,8 +61,15 @@ export default function Page() {
   const [quotation, setQuotation] = useState<Quotation>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submittedResponse, setSubmittedResponse] = useState<VendorResponseItem | null>(null);
+  const [submittedResponse, setSubmittedResponse] = useState<
+    VendorResponseItem[] | null
+  >([]);
 
+  const [vendorResponses, setVendorResponses] = useState<VendorResponseItem[]>(
+    [],
+  );
+  const [currentVendorSubmittedResponse, setCurrentVendorSubmittedResponse] =
+    useState<boolean>(false);
   const vendorId = "1"; // This should come from your authentication
 
   useEffect(() => {
@@ -107,6 +109,47 @@ export default function Page() {
           ),
         };
 
+        const data2 = await fetch(`${BACKEND_URL}/responses`);
+        const res = await data2.json();
+     const submittedResponseData = res.map(
+          (eachResponse: {
+            id: string;
+            quotation: string;
+            vendor: string;
+            response_items: [];
+          }) => ({
+            responseId: eachResponse.id,
+            quotationId: eachResponse.quotation,
+            vendorId: eachResponse.vendor,
+            responseItems: eachResponse.response_items.map(
+              (eachItem: {
+                item: string;
+                brand_model: string;
+                unit_price: number;
+                description: string;
+                delivery_period: string;
+              }) => ({
+                itemId: eachItem.item,
+                brandModel: eachItem.brand_model,
+                unitPrice: eachItem.unit_price,
+                description: eachItem.description,
+                deliveryPeriod: eachItem.delivery_period,
+              }),
+            ),
+          }),
+        );
+        
+        const quotationResponses = submittedResponseData.filter(
+          (each) => each.quotationId == params.slug,
+        );
+        const vendorSubmitted = quotationResponses.filter(
+          (each) => each.vendorId == vendorId,
+        );
+        setCurrentVendorSubmittedResponse(
+          vendorSubmitted.length === 0 ? false : true,
+        );
+        setVendorResponses(quotationResponses);
+
         setQuotation(backendData);
         setError(null);
       } catch (err) {
@@ -120,60 +163,6 @@ export default function Page() {
     fetchQuotation();
   }, [params.slug]);
 
-
-  // useEffect(() => {
-  //   const fetchQuotation = async () => {
-  //     if (!params.slug) return;
-
-  //     try {
-  //       setLoading(true);
-  //       const response = await axios.get(`${BACKEND_URL}/qt/${params.slug}`, {
-  //         headers: {
-  //           "Content-Type": "application/json",
-  //         },
-  //       });
-  //       const data = response.data;
-
-  //       const backendData: Quotation = {
-  //         id: data.id,
-  //         category: data.category,
-  //         quotationTitle: data.title,
-  //         description: data.description,
-  //         department: data.department,
-  //         submissionDeadline: data.submission_deadline,
-  //         deliveryPeriod: data.delivery_period,
-  //         status: data.status,
-  //         items: data.items.map(
-  //           (item: {
-  //             id: string;
-  //             name: string;
-  //             description: string;
-  //             amount: number;
-  //           }) => ({
-  //             id: item.id,
-  //             itemName: item.name,
-  //             itemDescription: item.description,
-  //             amount: item.amount,
-  //           }),
-  //         ),
-  //       };
-
-  //       setQuotation(backendData);
-  //       setError(null);
-  //     } catch (err) {
-  //       console.error("Error fetching quotation:", err);
-  //       setError("Failed to load quotation");
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchQuotation();
-  // }, [params.slug]);
-
-
-
-  
   if (loading) {
     return (
       <div className="flex">
@@ -332,9 +321,8 @@ export default function Page() {
           </div>
         )}
 
-  
         {/* Vendor Response Form */}
-        {!submittedResponse ? (
+        {!currentVendorSubmittedResponse ? (
           <VendorResponseForm
             quotationId={quotation!.id}
             vendorId={vendorId}
@@ -342,69 +330,101 @@ export default function Page() {
             setSubmittedResponse={setSubmittedResponse}
           />
         ) : (
-          /* Display Submitted Response Data */
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Your Submitted Response
-              </h3>
-              <div className="flex items-center gap-2 text-green-600">
-                <CheckCircle className="w-5 h-5" />
-                <span className="font-medium">Submitted</span>
-              </div>
-            </div>
+          ""
+        )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-              {submittedResponse.responseItems.map((responseItem, index) => {
-                const quotationItem = quotation!.items[index];
-                return (
-                  <div
-                    key={responseItem.item}
-                    className="border border-gray-200 rounded-lg p-4 bg-slate-50"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <span className="text-xs font-semibold text-gray-500">
-                        Item #{index + 1}
-                      </span>
-                      <span className="text-lg font-bold text-gray-900">
-                        ₹{responseItem.unitPrice.toLocaleString()}
-                      </span>
-                    </div>
+        {/* Display Submitted Response by vendors  */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            Vendor Responses ({vendorResponses.length})
+          </h3>
 
-                    <h4 className="text-sm font-semibold text-gray-900 mb-1">
-                      {quotationItem.itemName}
-                    </h4>
-                    <p className="text-sm text-blue-600 mb-2">
-                      {responseItem.brandModel}
-                    </p>
+          <div className="space-y-6">
+            {vendorResponses.map((response, responseIndex) => {
+              const totalAmount = response.responseItems.reduce(
+                (sum, item) => sum + item.unitPrice,
+                0,
+              );
 
-                    <div className="space-y-1 text-sm text-gray-600">
-                      <p>
-                        <span className="font-medium">Delivery:</span>{" "}
-                        {responseItem.deliveryTime}
-                      </p>
-                      {responseItem.description && (
-                        <p className="text-xs mt-2">{responseItem.description}</p>
-                      )}
+              return (
+                <div
+                  key={response.responseId}
+                  className="border border-gray-300 rounded-lg overflow-hidden"
+                >
+                  {/* Vendor Header */}
+                  <div className="bg-blue-50 p-4 border-b border-gray-300">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          Vendor ID: {response.vendorId}
+                        </h4>
+                      
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-600">Total Quote</p>
+                        <p className="text-2xl font-bold text-green-600">
+                          ₹{totalAmount.toLocaleString()}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                );
-              })}
-            </div>
 
-            <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Total Quote Amount</p>
-                <p className="text-2xl font-bold text-green-600">
-                  ₹
-                  {submittedResponse.responseItems
-                    .reduce((sum, item) => sum + item.unitPrice, 0)
-                    .toLocaleString()}
-                </p>
-              </div>
-            </div>
+                  {/* Items Grid */}
+                  <div className="p-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {response.responseItems.map((item, itemIndex) => (
+                        <div
+                          key={item.itemId}
+                          className="bg-gray-50 rounded-lg p-4 border border-gray-200"
+                        >
+                          <div className="flex justify-between items-start mb-3">
+                            <span className="text-xs font-semibold text-gray-500">
+                              Item #{itemIndex + 1}
+                            </span>
+                            <span className="text-lg font-bold text-gray-900">
+                              ₹{item.unitPrice.toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-xs text-gray-600">
+                                Brand/Model
+                              </p>
+                              <p className="text-sm font-semibold text-blue-600">
+                                {item.brandModel}
+                              </p>
+                            </div>
+
+                            <div>
+                              <p className="text-xs text-gray-600">
+                                Delivery Period
+                              </p>
+                              <p className="text-sm font-medium text-gray-900">
+                                {item.deliveryPeriod}
+                              </p>
+                            </div>
+
+                            {item.description && (
+                              <div>
+                                <p className="text-xs text-gray-600">
+                                  Description
+                                </p>
+                                <p className="text-xs text-gray-700 line-clamp-3">
+                                  {item.description}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
