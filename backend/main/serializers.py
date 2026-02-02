@@ -79,7 +79,7 @@ class ResponseItemSerializer(serializers.ModelSerializer):
   quotation_response = serializers.PrimaryKeyRelatedField(
     queryset=QuotationResponse.objects.all(),
     required=False,
-    write_only=False
+    write_only=True
   )
 
   class Meta:
@@ -103,10 +103,10 @@ class QuotationResponseSerializer(serializers.ModelSerializer):
     fields = ["id", "quotation", "vendor", "response_items"]
 
   def create(self, validated_data):
-    items_data = validated_data.pop("items")
+    items_data = validated_data.pop("response_items")
     quotation_response = QuotationResponse.objects.create(**validated_data)
 
     for item in items_data:
-      quotation_response.items.create(**item)
+      quotation_response.response_items.create(**item)
 
     return quotation_response
