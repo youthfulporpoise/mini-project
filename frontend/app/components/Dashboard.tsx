@@ -422,7 +422,7 @@ const Dashboard = () => {
             Total Paid Expenses
           </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            ${totalExpenses.toLocaleString()}
+            ₹{totalExpenses.toLocaleString()}
           </p>
           <p className="text-xs text-green-600 mt-2 flex items-center">
             <svg
@@ -463,7 +463,7 @@ const Dashboard = () => {
             Total Vendor Responses
           </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            ${totalQuotations.toLocaleString()}
+            ₹{totalQuotations.toLocaleString()}
           </p>
           <p className="text-xs text-blue-600 mt-2">
             {vendorResponses.length} responses received
@@ -492,7 +492,7 @@ const Dashboard = () => {
             Approved Quotations
           </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            ${approvedAmount.toLocaleString()}
+            ₹{approvedAmount.toLocaleString()}
           </p>
           <p className="text-xs text-green-600 mt-2">
             {quotationsByStatus.find((q) => q.status === "Approved")?.count ||
@@ -521,7 +521,7 @@ const Dashboard = () => {
           </div>
           <p className="text-sm font-medium text-gray-600">Pending Review</p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            ${pendingValue.toLocaleString()}
+            ₹{pendingValue.toLocaleString()}
           </p>
           <p className="text-xs text-orange-600 mt-2">
             {pendingQuotations.length} quotations awaiting
@@ -543,7 +543,7 @@ const Dashboard = () => {
               <YAxis
                 stroke="#6b7280"
                 fontSize={12}
-                tickFormatter={(value) => `$${value / 1000}k`}
+                tickFormatter={(value) => `₹${value / 1000}k`}
               />
               <Tooltip
                 formatter={(value) => `$${value?.toLocaleString()}`}
@@ -595,7 +595,7 @@ const Dashboard = () => {
                 Total Expenses
               </span>
               <span className="text-xl font-bold text-gray-900">
-                $
+                ₹
                 {expenseByCategory
                   .reduce((sum, cat) => sum + cat.amount, 0)
                   .toLocaleString()}
@@ -653,7 +653,7 @@ const Dashboard = () => {
                       </div>
                     </div>
                     <p className="text-sm font-bold text-gray-900 ml-4">
-                      ${transaction.amount.toLocaleString()}
+                      ₹{transaction.amount.toLocaleString()}
                     </p>
                   </div>
                 </div>
