@@ -51,8 +51,7 @@ export interface QuotationRequestForm {
   approved_amount?: number;
 }
 
-
-// Quotations 
+// Quotations
 export interface QuotationItems {
   id: string;
   itemName: string;
@@ -72,26 +71,29 @@ export interface Quotation {
   items: QuotationItems[];
 }
 
+//Vendors
 
+export interface VendorResponseFormProps {
+  quotationItems: Array<{
+    id: string;
+    itemName: string;
+    itemDescription: string;
+    amount: number;
+  }>;
+  setSubmittedResponse: (response: VendorResponseItem[]) => void;
+}
 
-//Vendors 
+export interface VendorResponseItemDetail {
+  item: string;
+  brandModel: string;
+  unitPrice: number;
+  description: string;
+  deliveryPeriod: string;
+}
 
 export interface VendorResponseItem {
   id: string;
-  quotationItemId: string;
-  itemName: string;
-  brandModel: string;
-  unitPrice: number;
-  specifications: string;
-  deliveryTime: string;
-}
-export interface VendorResponse {
-  id: string;
-  vendorName: string;
-  companyName: string;
-  email: string;
-  phone: string;
-  items: VendorResponseItem[];
-  totalAmount: number;
-  submittedAt: string;
+  quotation: string;
+  vendor: string;
+  responseItems: VendorResponseItemDetail[];
 }
