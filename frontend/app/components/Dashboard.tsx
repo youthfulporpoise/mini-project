@@ -1,5 +1,10 @@
 "use client";
-import { QuotationRequest, Transaction, VendorResponse } from "../utility";
+import clsx from "clsx";
+import {
+  QuotationRequest,
+  Transaction,
+  VendorResponse,
+} from "../utility/index";
 import {
   PieChart,
   Pie,
@@ -14,10 +19,8 @@ import {
   Legend,
 } from "recharts";
 
-
-
 // Sample Data
-const   quotationRequests: QuotationRequest[] = [
+const quotationRequests: QuotationRequest[] = [
   {
     client_id: "DEPT-CS-001",
     quotation_id: "Q2024-001",
@@ -393,11 +396,6 @@ const Dashboard = () => {
     )
     .slice(0, 5);
 
-  const currentMonth = monthlyTrend[monthlyTrend.length - 1] || {
-    quotations: 0,
-    approved: 0,
-  };
-
   return (
     <div className="max-w-7xl mx-auto space-y-6 p-6">
       {/* Summary Cards */}
@@ -588,7 +586,7 @@ const Dashboard = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+              <Tooltip formatter={(value) => `$${value?.toLocaleString()}`} />
             </PieChart>
           </ResponsiveContainer>
           <div className="mt-4 pt-4 border-t border-gray-200">
@@ -615,9 +613,6 @@ const Dashboard = () => {
           </h3>
           <div className="space-y-4 max-h-80 overflow-y-auto">
             {recentTransactions.map((transaction, index) => {
-              const quotation = quotationRequests.find(
-                (q) => q.quotation_id === transaction.quotation_id,
-              );
               const statusColors = {
                 Paid: "bg-green-100 text-green-700",
                 Pending: "bg-orange-100 text-orange-700",
@@ -628,13 +623,15 @@ const Dashboard = () => {
               return (
                 <div
                   key={index}
-                  className="border-l-4 pl-4 py-2 hover:bg-gray-50 transition-colors"
-                  style={{
-                    borderColor:
-                      transaction.payment_status === "Paid"
-                        ? "#16a34a"
-                        : "#f59e0b",
-                  }}
+                  className={clsx(
+                    "border-l-4 pl-4 py-2 hover:bg-gray-50 transition-colors",
+                    {
+                      borderColor:
+                        transaction.payment_status === "Paid"
+                          ? "#16a34a"
+                          : "#f59e0b",
+                    },
+                  )}
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">

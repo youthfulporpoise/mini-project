@@ -1,16 +1,17 @@
 import { LucideProps } from "lucide-react";
 import { ForwardRefExoticComponent, RefAttributes } from "react";
 
-// Sidebar 
+// Sidebar
 export interface menuItem {
-    id : number; 
-    icon : ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>; 
-    label : string; 
-    active : boolean; 
-
+  id: number;
+  icon: ForwardRefExoticComponent<
+    Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>
+  >;
+  label: string;
+  active: boolean;
 }
 
-// Dashboard 
+// Dashboard
 
 export interface QuotationRequest {
   client_id: string;
@@ -40,7 +41,6 @@ export interface Transaction {
   vendor_name: string;
 }
 
-
 export interface QuotationRequestForm {
   client_id: string;
   quotation_id: string;
@@ -51,53 +51,47 @@ export interface QuotationRequestForm {
   approved_amount?: number;
 }
 
-export interface QuotationItems {
-  id : number ; 
-  name : string ; 
-  description : string ; 
-  amount : number ; 
 
+// Quotations 
+export interface QuotationItems {
+  id: string;
+  itemName: string;
+  itemDescription: string;
+  amount: number;
 }
 
 export interface Quotation {
-  id: number;
+  id: string;
   category: string;
-  title: string;
-  department: string;
+  quotationTitle: string;
   description: string;
-  submission_deadline: string;
-  delivery_period : string; 
-  amount: number;
-  approved: boolean;
-  status: number;
-  items: QuotationItems[]; 
+  department: string;
+  submissionDeadline: string;
+  status: 0 | 1 | 2;
+  deliveryPeriod: number;
+  items: QuotationItems[];
 }
 
 
-// // Quotations 
-// export interface Quotations {
-//   amount
-// : 
-// 50000
-// approved
-// : 
-// false
-// department
-// : 
-// "Electronics and Communication Engineering"
-// description
-// : 
-// "(1) Raspberry Pi Zero 200 No.\r\nrefurbished Raspberry Pi Zeroes without any mechanical, electronic, or apparent are acceptable"
-// id
-// : 
-// 1
-// status
-// : 
-// 0
-// submission_deadline
-// : 
-// "2026-06-25T00:00:00Z"
-// title
-// : 
-// "Purcha
-// }
+
+//Vendors 
+
+export interface VendorResponseItem {
+  id: string;
+  quotationItemId: string;
+  itemName: string;
+  brandModel: string;
+  unitPrice: number;
+  specifications: string;
+  deliveryTime: string;
+}
+export interface VendorResponse {
+  id: string;
+  vendorName: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  items: VendorResponseItem[];
+  totalAmount: number;
+  submittedAt: string;
+}

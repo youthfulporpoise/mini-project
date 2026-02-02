@@ -10,25 +10,9 @@ import {
 } from "lucide-react";
 import { BACKEND_URL } from "../utility";
 import axios from "axios";
+import { Quotation , QuotationItems } from "../utility/index";
+import { v4 as uuidv4 } from 'uuid';
 
-interface QuotationItem {
-  id: string;
-  itemName: string;
-  itemDescription: string;
-  amount: number;
-}
-
-interface QuotationFormData {
-  id: string;
-  category: string;
-  quotationTitle: string;
-  description: string;
-  department: string;
-  submissionDeadline: string;
-  status: 0 | 1 | 2;
-  deliveryPeriod: number;
-  items: QuotationItem[];
-}
 
 function FormSection({
   title,
@@ -83,8 +67,8 @@ export default function QuotationRequestForm() {
     items: true,
   });
 
-  const [formData, setFormData] = useState<QuotationFormData>({
-    id: "",
+  const [formData, setFormData] = useState<Quotation>({
+    id: uuidv4(),
     category: "",
     quotationTitle: "",
     description: "",
@@ -94,7 +78,7 @@ export default function QuotationRequestForm() {
     status: 0,
     items: [
       {
-        id: "",
+        id: uuidv4(),
         itemName: "",
         itemDescription: "",
         amount: 0,
@@ -105,7 +89,7 @@ export default function QuotationRequestForm() {
   const [status, setStatus] = useState<"published" | null>(null);
 
   const toggleSection = (section: string) => {
-    setExpandedSections((prev) => ({
+    setExpandedSections((prev ) => ({
       ...prev,
       [section]: !prev[section],
     }));
@@ -121,8 +105,8 @@ export default function QuotationRequestForm() {
   };
 
   const addItem = () => {
-    const newItem: QuotationItem = {
-      id: "",
+    const newItem: QuotationItems = {
+      id: uuidv4(),
       itemName: "",
       itemDescription: "",
       amount: 0,
@@ -144,7 +128,7 @@ export default function QuotationRequestForm() {
 
   const updateItem = (
     id: string,
-    field: keyof QuotationItem,
+    field: keyof QuotationItems,
     value: string,
   ) => {
     setFormData((prev) => ({
@@ -155,74 +139,76 @@ export default function QuotationRequestForm() {
     }));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    // Camel Case to Snake Case conversion
-    const backendData = {
-      id: formData.id,
-      category: formData.category,
-      title: formData.quotationTitle,
-      description: formData.description,
-      department: formData.department,
-      submission_deadline: formData.submissionDeadline,
-      delivery_period: formData.deliveryPeriod,
-      status: formData.status,
-      items: formData.items.map((item) => ({
-        id: item.id,
-        name: item.itemName,
-        description: item.itemDescription,
-        amount: item.amount,
-      })),
-    };
-    
-         const options = {
+    try {
+      // Camel Case to Snake Case conversion
+      const backendData = {
+        id: formData.id,
+        category: formData.category,
+        title: formData.quotationTitle,
+        description: formData.description,
+        department: formData.department,
+        submission_deadline: formData.submissionDeadline,
+        delivery_period: formData.deliveryPeriod,
+        status: formData.status,
+        items: formData.items.map((item) => ({
+          id: item.id,
+          name: item.itemName,
+          description: item.itemDescription,
+          amount: item.amount,
+        })),
+      };
+
+      const options = {
         headers: {
           "Content-Type": "application/json",
         },
       };
-    const response = await axios.post(`${BACKEND_URL}/qt/`, backendData, options);
-    console.log("Response:", response.data);
+      const response = await axios.post(
+        `${BACKEND_URL}/qt/`,
+        backendData,
+        options,
+      );
+      console.log("Response:", response.data);
 
-    setStatus("published");
-    
-  
-    setTimeout(() => {
-      setStatus(null);
-      
-      // Reset form data to initial state
-      setFormData({
-        id: "",
-        category: "",
-        quotationTitle: "",
-        description: "",
-        department: "",
-        submissionDeadline: "",
-        deliveryPeriod: 0,
-        status: 0,
-        items: [
-          {
-            id: "1",
-            itemName: "",
-            itemDescription: "",
-            amount: 0,
-          },
-        ],
-      });
-      
-      // Reset sections to expanded
-      setExpandedSections({
-        basic: true,
-        items: true,
-      });
-    }, 3000);
-    
-  } catch (error) {
-    console.error("Error:", error);
-    alert("Failed to submit quotation. Please try again.");
-  }
-};
+      setStatus("published");
+
+      setTimeout(() => {
+        setStatus(null);
+
+        // Reset form data to initial state
+        setFormData({
+          id: "",
+          category: "",
+          quotationTitle: "",
+          description: "",
+          department: "",
+          submissionDeadline: "",
+          deliveryPeriod: 0,
+          status: 0,
+          items: [
+            {
+              id: "1",
+              itemName: "",
+              itemDescription: "",
+              amount: 0,
+            },
+          ],
+        });
+
+        // Reset sections to expanded
+        setExpandedSections({
+          basic: true,
+          items: true,
+        });
+      }, 3000);
+    } catch (error) {
+      console.error("Error:", error);
+      alert("Failed to submit quotation. Please try again.");
+    }
+  };
   if (status) {
     return (
       <div className="bg-white rounded-lg shadow-lg p-8 text-center">
@@ -273,6 +259,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               Department <span className="text-red-600">*</span>
             </label>
             <select
+              title="department"
               name="department"
               value={formData.department}
               onChange={handleChange}
@@ -311,6 +298,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               <span className="text-red-600">*</span>
             </label>
             <input
+              placeholder="Date"
               type="date"
               name="submissionDeadline"
               value={formData.submissionDeadline}

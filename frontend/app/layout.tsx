@@ -1,4 +1,3 @@
-import { QuotationProvider } from "./context/QuotationContext";
 import "./globals.css";
 
 export default function RootLayout({
@@ -8,9 +7,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>
-        <QuotationProvider>{children}</QuotationProvider>
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

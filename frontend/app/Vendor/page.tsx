@@ -1,9 +1,8 @@
 "use client";
 import { FileText, Clock, CheckCircle, XCircle, Eye } from "lucide-react";
-import { Sidebar } from "../components/Sidebar";
+import { Sidebar } from "../components/Vendor/Sidebar";
 import { format, parseISO } from "date-fns";
 import { useRouter } from "next/navigation";
-import QuotationRequestForm from "../components/QuotationRequestForm";
 import { useEffect, useState } from "react";
 import { BACKEND_URL } from "../utility";
 import axios from "axios";
@@ -103,7 +102,6 @@ export default function Page() {
     <div className="flex flex-row ">
       <Sidebar />
       <div className="space-y-6 p-5 overflow-y-scroll h-screen w-[80vw] items-center">
-        <QuotationRequestForm />
         {/* Quotations Table */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -181,7 +179,7 @@ export default function Page() {
                       <td className="py-3 px-4">
                         <button
                           onClick={() => {
-                            router.push(`Quotations/${quotation.id}`);
+                            router.push(`Vendor/Quotations/${quotation.id}`);
                           }}
                           className="text-blue-600 hover:text-blue-700 p-1"
                         >

@@ -1,10 +1,12 @@
 "use client";
+import { useEffect, useState } from "react";
 import { FileText, Clock, CheckCircle, XCircle } from "lucide-react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { Sidebar } from "@/app/components/Sidebar";
-import { useQuotation } from "@/app/context/QuotationContext";
 import { parseISO, format } from "date-fns";
-import { QuotationItems } from "../../utility/index";
+import { QuotationItems, Quotation } from "../../utility/index";
+import { BACKEND_URL } from "@/app/utility";
+import axios from "axios";
 
 const getStatusConfig = (status: number) => {
   switch (status) {
@@ -42,101 +44,182 @@ const getStatusConfig = (status: number) => {
 const formatDate = (dateString: string) => {
   return format(parseISO(dateString), "MMMM dd, yyyy");
 };
+
+const getQuotationTotal = (items: { amount: number }[]) => {
+  return items.reduce((sum, item) => sum + (item.amount || 0), 0);
+};
 export default function Page() {
-  const context = useQuotation();
-  const quotation = context?.selectedQuotation;
-  console.log(quotation);
-  const searchParams = useParams();
-  if (!searchParams) return null;
-  const currentQuotation = searchParams.slug;
-  const statusConfig = getStatusConfig(quotation!.status);
+  const params = useParams();
+  const router = useRouter();
+  const [quotation, setQuotation] = useState<Quotation>();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchQuotation = async () => {
+      if (!params.slug) return;
+      console.log(params.slug);
+      try {
+        setLoading(true);
+        const response = await axios.get(`${BACKEND_URL}/qt/${params.slug}`, {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        const data = response.data;
+
+        const backendData: Quotation = {
+          id: data.id,
+          category: data.category,
+          quotationTitle: data.title,
+          description: data.description,
+          department: data.department,
+          submissionDeadline: data.submission_deadline,
+          deliveryPeriod: data.delivery_period,
+          status: data.status,
+          items: data.items.map(
+            (item: {
+              id: string;
+              name: string;
+              description: string;
+              amount: number;
+            }) => ({
+              id: item.id,
+              itemName: item.name,
+              itemDescription: item.description,
+              amount: item.amount,
+            }),
+          ),
+        };
+        setQuotation(backendData);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching quotation:", err);
+        setError("Failed to load quotation");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuotation();
+  }, [params.slug]);
+
+  if (loading) {
+    return (
+      <div className="flex">
+        <Sidebar />
+        <div className="flex items-center justify-center w-full h-screen">
+          <div className="text-lg text-gray-600">Loading quotation...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !quotation) {
+    return (
+      <div className="flex">
+        <Sidebar />
+        <div className="flex flex-col items-center justify-center w-full h-screen">
+          <div className="text-lg text-red-600 mb-4">
+            {error || "Quotation not found"}
+          </div>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const statusConfig = getStatusConfig(quotation.status);
   const StatusIcon = statusConfig.icon;
 
   return (
     <div className="flex">
       <Sidebar />
       <div className="m-5">
-        {currentQuotation && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw]">
-            {quotation && (
-              <div key={quotation.id}>
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Quotation Details - {quotation.id}
-                  </h3>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw]">
+          <div key={quotation.id}>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Quotation Details - {quotation.id}
+              </h3>
+              <button
+                onClick={() => router.back()}
+                className="text-blue-600 hover:text-blue-700"
+              >
+                ← Back
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Department</p>
+                  <p className="text-base font-medium text-gray-900">
+                    {quotation.department}
+                  </p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Department</p>
-                      <p className="text-base font-medium text-gray-900">
-                        {quotation.department}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Description</p>
-                      <p className="text-base font-medium text-gray-900">
-                        {quotation.description}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Number of Items
-                      </p>
-                      <p className="text-base font-medium text-gray-900">
-                        {quotation.items.length}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Valid Until</p>
-                      <p className="text-base font-medium text-gray-900">
-                        {formatDate(quotation.submission_deadline)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">
-                        Quotation Amount
-                      </p>
-                      <p className="text-xl font-bold text-gray-900">
-                        {quotation.amount}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-600 mb-1">Status</p>
-                      <div className="flex items-center gap-3">
-                        <StatusIcon
-                          className={`w-6 h-6 ${statusConfig.iconColor}`}
-                        />
-                        <span
-                          className={`px-3 py-1 text-sm rounded-full ${statusConfig.color}`}
-                        >
-                          {statusConfig.label}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Description</p>
+                  <p className="text-base font-medium text-gray-900">
+                    {quotation.description}
+                  </p>
                 </div>
-                <div className="mt-6 flex gap-3">
-                  {quotation.status === 0 && (
-                    <>
-                      <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-                        Approve Quotation
-                      </button>
-                      <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
-                        Reject Quotation
-                      </button>
-                    </>
-                  )}
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Number of Items</p>
+                  <p className="text-base font-medium text-gray-900">
+                    {quotation.items.length}
+                  </p>
                 </div>
               </div>
-            )}
+              <div className="space-y-4">
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Valid Until</p>
+                  <p className="text-base font-medium text-gray-900">
+                    {formatDate(quotation?.submissionDeadline)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Quotation Amount</p>
+                  <p className="text-xl font-bold text-gray-900">
+                    ₹{getQuotationTotal(quotation.items)}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600 mb-1">Status</p>
+                  <div className="flex items-center gap-3">
+                    <StatusIcon
+                      className={`w-6 h-6 ${statusConfig.iconColor}`}
+                    />
+                    <span
+                      className={`px-3 py-1 text-sm rounded-full ${statusConfig.color}`}
+                    >
+                      {statusConfig.label}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* <div className="mt-6 flex gap-3">
+              {quotation.status === 0 && (
+                <>
+                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Approve Quotation
+                  </button>
+                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Reject Quotation
+                  </button>
+                </>
+              )}
+            </div> */}
           </div>
-        )}
+        </div>
 
         {/* Items Grid Section */}
-        {quotation && quotation.items && quotation.items.length > 0 && (
+        {quotation.items && quotation.items.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
               Items ({quotation.items.length})
@@ -158,10 +241,10 @@ export default function Page() {
                   </div>
 
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                    {item.name || "N/A"}
+                    {item.itemName || "N/A"}
                   </h4>
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                    {item.description || "N/A"}
+                    {item.itemDescription || "N/A"}
                   </h4>
 
                   <div className="space-y-1 text-sm text-gray-600">
@@ -180,7 +263,8 @@ export default function Page() {
                 <p className="text-2xl font-bold text-gray-900">
                   ₹
                   {quotation.items.reduce(
-                    (sum: number, item: QuotationItems) => sum + (item.amount || 0),
+                    (sum: number, item: QuotationItems) =>
+                      sum + (item.amount || 0),
                     0,
                   )}
                 </p>
