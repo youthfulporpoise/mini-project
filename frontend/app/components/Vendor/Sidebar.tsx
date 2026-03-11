@@ -24,7 +24,7 @@ export function Sidebar() {
           const Icon = item.icon;
           return (
             <li key={item.id}>
-              <Link href={`/Vendor/${item.label}`}>
+              <Link href={`/vendor/${item.label.toLowerCase()}`}>
                 <button
                   type="button"
                   key={item.label}
