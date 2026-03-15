@@ -2,6 +2,25 @@ from django.db import models
 from django.utils import timezone
 from datetime import timedelta
 
+from django.contrib.auth.models import AbstractUser
+
+
+# This is the USER MODEL.
+
+class User(AbstractUser):
+  class Role(models.TextChoices):
+    HOD = "HOD", "Head of Department"
+    PRINCIPAL = "PRINCIPAL", "Principal"
+    ACCOUNTANT = "ACCOUNTANT", "Accountant"
+    VENDOR = "VENDOR", "Vendor"
+    ADMIN = "ADMIN", "Admin"
+
+  role = models.CharField(max_length=30, choices=Role.choices, default=Role.VENDOR)
+  phone = models.CharField(max_length=15, blank=True)
+
+
+# These are the SYSTEM MODELS, viz.
+# vendors, quotations, items, responses, etc.
 
 def submission_deadline_default():
   return timezone.now() + timedelta(days=7)
