@@ -1,5 +1,10 @@
 from django.shortcuts import render
-from django.contrib.auth import get_user_model
+from django.contrib.auth import (
+  get_user_model,
+  login,
+  logout,
+  authenticate,
+)
 
 from rest_framework import views, generics, renderers, permissions
 from rest_framework.response import Response
@@ -43,7 +48,7 @@ User = get_user_model()
 class RegisterView(generics.CreateAPIView):
   queryset = User.objects.all()
   serializer_class = RegisterSerializer
-  permission_classes = [IsAdmin]
+  permission_classes = [permissions.AllowAny]
 
 
 class LoginView(views.APIView):

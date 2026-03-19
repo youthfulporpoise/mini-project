@@ -20,11 +20,11 @@ class RegisterSerializer(serializers.ModelSerializer):
     model = User
     fields = [
       "id",
-      "name",
+      "username",
       "email",
       "password",
       "phone",
-      "role"
+      "role",
     ]
 
   def create(self, validated_data):
@@ -41,10 +41,10 @@ class UserSerializer(serializers.ModelSerializer):
     model = User
     fields = [
       "id",
-      "name",
+      "username",
       "email",
       "phone",
-      "role"
+      "role",
     ]
 
 
