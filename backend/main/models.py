@@ -27,7 +27,7 @@ def submission_deadline_default():
 
 
 class Vendor(models.Model):
-  name = models.CharField(max_length=64)
+  username = models.CharField(max_length=64)
   address = models.TextField()
   email = models.CharField(max_length=64)
 
@@ -40,6 +40,10 @@ class Quotation(models.Model):
   submission_deadline = models.DateTimeField(default=submission_deadline_default)
   status = models.IntegerField()
   delivery_period = models.DurationField(default=timedelta(days=28))
+  # new fields 
+  qt_req_verified_accountant  = models.BooleanField(default=False, editable=False)
+  final_qt_verified_accountant   = models.BooleanField(default=False, editable=False)
+  qt_verified_principal = models.BooleanField(default=False , editable=False)
 
 
 class QuotationResponse(models.Model):
