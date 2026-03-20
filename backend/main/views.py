@@ -65,6 +65,7 @@ class LoginView(views.APIView):
         "message": "logged in",
         "user_id": user.id,
         "username": user.username,
+        "role": user.role 
       })
     else:
       return Response({ "error": "invalid credentials" })
