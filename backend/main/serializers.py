@@ -107,6 +107,10 @@ class QuotationWithItemSerializer(serializers.ModelSerializer):
       "submission_deadline",
       "status",
       "delivery_period",
+      # new column responses
+      "qt_req_verified_accountant",
+      "final_qt_verified_accountant"   ,
+      "qt_verified_principal",
       "items"
     ]
 

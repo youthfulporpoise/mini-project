@@ -27,7 +27,7 @@ def submission_deadline_default():
 
 
 class Vendor(models.Model):
-  username = models.CharField(max_length=64)
+  name = models.CharField(max_length=64)
   address = models.TextField()
   email = models.CharField(max_length=64)
 
