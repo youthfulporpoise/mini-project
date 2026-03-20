@@ -69,6 +69,10 @@ export interface Quotation {
   status: 0 | 1 | 2;
   deliveryPeriod: number;
   items: QuotationItems[];
+  // new fields
+  qtReqVerifiedAccountant: boolean | false;
+  finalQtVerifiedAccountant: boolean | false;
+  qtVerifiedPrincipal: boolean | false;
 }
 
 //Vendors

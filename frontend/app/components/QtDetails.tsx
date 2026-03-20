@@ -1,43 +1,35 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Sidebar } from "@/app/components/Vendor/Sidebar";
-import { BACKEND_URL } from "@/app/utility";
-import axios from "axios";
+import { Sidebar } from "@/app/components/Sidebar";
+
 import {
   QuotationItems,
   Quotation,
   VendorResponseItem,
-} from "@/app/utility/index";
-import VendorResponseForm from "@/app/components/Vendor/VendorResponseForm";
-import { formatDate } from "@/app/src/utils/DateFormat";
+} from "../utility/index";
+import { BACKEND_URL } from "@/app/utility";
+import axios from "axios";
 import { getStatusConfig } from "@/app/src/utils/Status";
+import { formatDate } from "@/app/src/utils/DateFormat";
 
 const getQuotationTotal = (items: { amount: number }[]) => {
   return items.reduce((sum, item) => sum + (item.amount || 0), 0);
 };
-
-export default function Page() {
+export default function QtDetails() {
   const params = useParams();
   const router = useRouter();
   const [quotation, setQuotation] = useState<Quotation>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [submittedResponse, setSubmittedResponse] = useState<
-    VendorResponseItem[] | null
-  >([]);
-
   const [vendorResponses, setVendorResponses] = useState<VendorResponseItem[]>(
     [],
   );
-  const [currentVendorSubmittedResponse, setCurrentVendorSubmittedResponse] =
-    useState<boolean>(false);
-  const vendorId = "1"; // This should come from your authentication
 
   useEffect(() => {
     const fetchQuotation = async () => {
       if (!params.slug) return;
-
+      console.log(params.slug);
       try {
         setLoading(true);
         const response = await axios.get(`${BACKEND_URL}/qt/${params.slug}`, {
@@ -56,6 +48,9 @@ export default function Page() {
           submissionDeadline: data.submission_deadline,
           deliveryPeriod: data.delivery_period,
           status: data.status,
+          qtReqVerifiedAccountant: data.qt_req_verified_accountant,
+          finalQtVerifiedAccountant: data.final_qt_verified_accountant,
+          qtVerifiedPrincipal: data.qt_verified_principal,
           items: data.items.map(
             (item: {
               id: string;
@@ -73,7 +68,7 @@ export default function Page() {
 
         const data2 = await fetch(`${BACKEND_URL}/responses`);
         const res = await data2.json();
-     const submittedResponseData = res.map(
+        const submittedResponseData = res.map(
           (eachResponse: {
             id: string;
             quotation: string;
@@ -100,16 +95,11 @@ export default function Page() {
             ),
           }),
         );
-        
+
         const quotationResponses = submittedResponseData.filter(
           (each) => each.quotationId == params.slug,
         );
-        const vendorSubmitted = quotationResponses.filter(
-          (each) => each.vendorId == vendorId,
-        );
-        setCurrentVendorSubmittedResponse(
-          vendorSubmitted.length === 0 ? false : true,
-        );
+
         setVendorResponses(quotationResponses);
 
         setQuotation(backendData);
@@ -159,10 +149,9 @@ export default function Page() {
   const StatusIcon = statusConfig.icon;
 
   return (
-    <div className="flex h-screen">
+    <div className="flex">
       <Sidebar />
       <div className="p-5 w-full overflow-y-scroll h-screen">
-        {/* Quotation Details */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw]">
           <div key={quotation.id}>
             <div className="flex items-center justify-between mb-6">
@@ -225,10 +214,22 @@ export default function Page() {
                 </div>
               </div>
             </div>
+            {/* <div className="mt-6 flex gap-3">
+              {quotation.status === 0 && (
+                <>
+                  <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    Approve Quotation
+                  </button>
+                  <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                    Reject Quotation
+                  </button>
+                </>
+              )}
+            </div> */}
           </div>
         </div>
 
-        {/* Items Grid */}
+        {/* Items Grid Section */}
         {quotation.items && quotation.items.length > 0 && (
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">
@@ -253,7 +254,7 @@ export default function Page() {
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">
                     {item.itemName || "N/A"}
                   </h4>
-                  <h4 className="text-sm text-gray-600 mb-2">
+                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
                     {item.itemDescription || "N/A"}
                   </h4>
 
@@ -283,18 +284,6 @@ export default function Page() {
           </div>
         )}
 
-        {/* Vendor Response Form */}
-        {!currentVendorSubmittedResponse ? (
-          <VendorResponseForm
-            quotationId={quotation!.id}
-            vendorId={vendorId}
-            quotationItems={quotation!.items}
-            setSubmittedResponse={setSubmittedResponse}
-          />
-        ) : (
-          ""
-        )}
-
         {/* Display Submitted Response by vendors  */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -320,7 +309,6 @@ export default function Page() {
                         <h4 className="font-semibold text-gray-900">
                           Vendor ID: {response.vendorId}
                         </h4>
-                      
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600">Total Quote</p>
