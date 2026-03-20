@@ -1,6 +1,6 @@
 "use client";
 
-import { QtResponses } from "../components/QtResponses";
+import { QtResponses } from "../components/QtResponse";
 import QuotationRequestForm from "../components/QuotationRequestForm";
 import { Sidebar } from "../components/Sidebar";
 
