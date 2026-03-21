@@ -52,7 +52,7 @@ export default function Page() {
             }),
           ),
         }));
-        console.log(backendData);
+
         setData(backendData);
       } catch {
         console.log("Error");
@@ -78,40 +78,40 @@ export default function Page() {
               Quotation Requests
             </h3>
           </div>
-          {data[0]?.qtReqVerifiedAccountant && (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Quotation ID
-                    </th>
 
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Department
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Description
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Amount
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Valid Until
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Status
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.map((quotation) => {
-                    const statusConfig = getStatusConfig(quotation.status);
-                    const StatusIcon = statusConfig.icon;
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-gray-200">
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Quotation ID
+                  </th>
 
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Department
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Description
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Amount
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Valid Until
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Status
+                  </th>
+                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.map((quotation) => {
+                  const statusConfig = getStatusConfig(quotation.status);
+                  const StatusIcon = statusConfig.icon;
+                  if (quotation.qtReqVerifiedAccountant) {
                     return (
                       <tr
                         key={quotation.id}
@@ -158,11 +158,11 @@ export default function Page() {
                         </td>
                       </tr>
                     );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
+                  }
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
     </div>

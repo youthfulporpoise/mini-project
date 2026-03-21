@@ -101,3 +101,11 @@ export interface VendorResponseItem {
   vendor: string;
   responseItems: VendorResponseItemDetail[];
 }
+
+
+
+export interface LoginResponse {
+  id: string;
+  username: string;
+  role: string;
+}

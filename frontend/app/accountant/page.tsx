@@ -4,7 +4,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { RefreshCw, Send, CheckCircle, XCircle } from "lucide-react";
-import { BACKEND_URL, Quotation } from "../utility";
+import { BACKEND_URL } from "../utility";
+import { Quotation } from "../utility/index";
 
 export default function Page() {
   const [incoming, setIncoming] = useState<Quotation[]>([]);

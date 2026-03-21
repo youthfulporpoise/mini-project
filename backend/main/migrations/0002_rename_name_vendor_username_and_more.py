@@ -10,11 +10,7 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RenameField(
-            model_name="vendor",
-            old_name="name",
-            new_name="username",
-        ),
+     
         migrations.AddField(
             model_name="quotation",
             name="final_qt_verified_accountant",

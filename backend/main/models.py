@@ -41,9 +41,9 @@ class Quotation(models.Model):
   status = models.IntegerField()
   delivery_period = models.DurationField(default=timedelta(days=28))
   # new fields 
-  qt_req_verified_accountant  = models.BooleanField(default=False, editable=False)
-  final_qt_verified_accountant   = models.BooleanField(default=False, editable=False)
-  qt_verified_principal = models.BooleanField(default=False , editable=False)
+  qt_req_verified_accountant  = models.BooleanField(default=False)
+  final_qt_verified_accountant   = models.BooleanField(default=False)
+  qt_verified_principal = models.BooleanField(default=False )
 
 
 class QuotationResponse(models.Model):
