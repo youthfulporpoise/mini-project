@@ -19,11 +19,8 @@ const menuItems: menuItem[]  = [
   { id: 2, icon: FileText, label: "Quotations", active: false },
   { id: 3, icon: UserPlus, label: "Registration", active: false },
   { id: 4, icon: CreditCard, label: "Transactions", active: false },
-  { id: 5, icon: DollarSign, label: "Expenses", active: false },
-  { id: 6, icon: Users, label: "Vendor Requests", active: false },
   { id: 7, icon: MessageSquare, label: "Responses", active: false },
-  { id: 8, icon: Package, label: "Products", active: false },
-  { id: 9, icon: Settings, label: "Settings", active: false },
+  
 ];
 
 export function Sidebar() {
