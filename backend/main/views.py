@@ -1,4 +1,12 @@
 from django.shortcuts import render
+from django.core.mail import send_mail
+from rest_framework.response import Response
+
+import razorpay
+import hmac
+import hashlib
+from django.conf import settings
+
 from django.contrib.auth import (
   get_user_model,
   login,
@@ -6,8 +14,13 @@ from django.contrib.auth import (
   authenticate,
 )
 
-from rest_framework import views, generics, renderers, permissions
-from rest_framework.response import Response
+from rest_framework import (
+  views,
+  generics,
+  renderers,
+  permissions,
+  status,
+)
 
 from main.models import (
   Vendor,
@@ -28,7 +41,9 @@ from main.serializers import (
   QuotationWithItemSerializer,
   ResponseItemSerializer,
   RegisterSerializer,
-  UserSerializer
+  UserSerializer,
+  GenerateOTPSerializer,
+  VerifyOTPSerializer,
 )
 
 from main.permissions import (
@@ -39,10 +54,6 @@ from main.permissions import (
   IsVendor
 )
 
-import razorpay
-import hmac
-import hashlib
-from django.conf import settings
 
 razorpay_client = razorpay.Client(
     auth=(settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
@@ -50,20 +61,20 @@ razorpay_client = razorpay.Client(
 
 
 class CreatePaymentOrderView(views.APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
         try:
             quotation_id = request.data.get("quotation_id")
-            amount       = request.data.get("amount")        # in rupees
+            amount = request.data.get("amount")        # in rupees
 
             # convert rupees to paise
             amount_paise = int(amount) * 100
 
             # create order on razorpay
             order = razorpay_client.order.create({
-                "amount":          amount_paise,
-                "currency":        "INR",
+                "amount": amount_paise,
+                "currency": "INR",
                 "payment_capture": 1,           # auto capture
             })
 
@@ -75,22 +86,22 @@ class CreatePaymentOrderView(views.APIView):
             )
 
             return Response({
-                "order_id":    order["id"],
-                "amount":      amount_paise,
-                "currency":    "INR",
-                "key":         settings.RAZORPAY_KEY_ID,
+                "order_id": order["id"],
+                "amount": amount_paise,
+                "currency": "INR",
             })
+
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
 
 class VerifyPaymentView(views.APIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request):
-        razorpay_order_id   = request.data.get("razorpay_order_id")
+        razorpay_order_id = request.data.get("razorpay_order_id")
         razorpay_payment_id = request.data.get("razorpay_payment_id")
-        razorpay_signature  = request.data.get("razorpay_signature")
+        razorpay_signature = request.data.get("razorpay_signature")
 
         # verify signature
         body = razorpay_order_id + "|" + razorpay_payment_id
@@ -104,8 +115,8 @@ class VerifyPaymentView(views.APIView):
             # update payment record
             payment = Payment.objects.get(razorpay_order_id=razorpay_order_id)
             payment.razorpay_payment_id = razorpay_payment_id
-            payment.razorpay_signature  = razorpay_signature
-            payment.is_verified         = True
+            payment.razorpay_signature = razorpay_signature
+            payment.is_verified = True
             payment.save()
 
             # update quotation status to paid
@@ -113,8 +124,10 @@ class VerifyPaymentView(views.APIView):
             payment.quotation.save()
 
             return Response({"message": "payment verified", "status": "success"})
+
         else:
             return Response({"error": "invalid signature"}, status=400)
+
 
 ##########################################
 
@@ -239,3 +252,100 @@ class QuotationWithItemDetail(generics.RetrieveUpdateDestroyAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = Quotation.objects.all()
   serializer_class = QuotationWithItemSerializer
+
+
+class GenerateOTPView(views.APIView):
+  permission_classes = [permissions.IsAuthenticated]
+  
+  def post(self, request):
+    serializer = GenerateOTPSerializer(data=request.data)
+    if not serializer.is_valid():
+      return Response(
+        serializers.errors, status=status.HTTP_400_BAD_REQUEST 
+      )
+
+    quotation_id = serializer.validated_data["quotation_id"]
+
+    try:
+      quotation = Quotation.objects.get(id=quotation_id)
+    except Quotation.DoesNotExist:
+      return Response(
+        {"error": "quotation not found"},
+        status=status.HTTP_400_BAD_REQUEST
+      )
+
+    DeliveryVerification.objects.filter(quotation=quotation).delete()
+
+    otp_code = DeliveryVerification.generate_otp()
+    DeliveryVerification.objects.create(quotation=quotation, otp=otp_code)
+
+    send_mail(
+      subject="QMS - Delivery Verification OTP",
+      message=(
+        f"Quotation ID: {quotation.id}\n"
+        f"Delivery Verification OTP: {otp_code}\n"
+        "This OTP is valid for 5 minutes.\n",
+      ),
+      from_email=settings.DEFAULT_FROM_EMAIL,
+      recipient_list=[request.user.email],
+      fail_silently=False
+    )
+
+    return Response(
+      {"message": "OTP sent to registered mail"},
+      status=status.HTTP_200_OK,
+    )
+
+
+class VerifyOTPView(views.APIView):
+  permission_classes = [permissions.IsAuthenticated]
+
+  def post(self, request):
+    serializer = VerifyOTPSerializer(data=request.data)
+    if not serializer.is_valid():
+      return Response(
+        serializers.errors,
+        status=status.HTTP_400_BAD_REQUEST,
+      )
+
+    quotation_id = serializer.validated_data["quotation_id"]
+    otp_input = serializer.validated_data["otp"]
+
+    try:
+      delivery = DeliveryVerification.objects.get(
+        quotation__id=quotation_id,
+        is_verified=Fals
+      )
+    except DeliveryVerification.DoesNotExist:
+      return Response(
+        {"error": "No pending OTP found for this quotation"},
+        status=status.HTTP_404_NOT_FOUND,
+      )
+
+    if delivery.is_expired():
+      return Response(
+        {"error": "OTP expired"},
+        status=status.HTTP_400_BAD_REQUEST,
+      )
+
+    if delivery_otp != otp_input:
+      return Response(
+        {"error": "OTP does not match"},
+        status=status.HTTP_400_BAD_REQUEST,
+      )
+
+    delivery.is_verified = True
+    delivery.save()
+
+    quotation = delivery.quotation
+    quotation.status = "DELIVERED"
+    quotation.save()
+
+    return Response(
+      {
+        "message": "Delivery verified",
+        "quotation_id": quotation.id,
+        "status": quotation.status,
+      },
+      status=status.HTTP_200_OK,
+    )

@@ -3,6 +3,7 @@ from django.utils import timezone
 from datetime import timedelta
 
 from django.contrib.auth.models import AbstractUser
+from random import randint
 
 
 # This is the USER MODEL.
@@ -33,16 +34,22 @@ class Vendor(models.Model):
 
 
 class Quotation(models.Model):
+  class Status(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    APPROVED = "APPROVED", "Approved"
+    REJECTED = "REJECTED", "Rejected"
+    DELIVERED = "DELIVERED", "Delivered"
+
   title = models.CharField(max_length=512)
   department = models.CharField(max_length=512)
   description = models.TextField()
   category = models.CharField(max_length=128, default="Administrative")
   submission_deadline = models.DateTimeField(default=submission_deadline_default)
-  status = models.IntegerField()
+  status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
   delivery_period = models.DurationField(default=timedelta(days=28))
-  # new fields 
-  qt_req_verified_accountant  = models.BooleanField(default=False)
-  final_qt_verified_accountant   = models.BooleanField(default=False)
+
+  qt_req_verified_accountant = models.BooleanField(default=False)
+  final_qt_verified_accountant = models.BooleanField(default=False)
   qt_verified_principal = models.BooleanField(default=False )
 
 
@@ -81,15 +88,30 @@ class ResponseItem(models.Model):
   )
 
 
-
 class Payment(models.Model):
-    quotation         = models.ForeignKey(Quotation, on_delete=models.CASCADE)
-    razorpay_order_id   = models.CharField(max_length=256)
+    quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
+    razorpay_order_id = models.CharField(max_length=256)
     razorpay_payment_id = models.CharField(max_length=256, blank=True)
-    razorpay_signature  = models.CharField(max_length=256, blank=True)
-    amount            = models.IntegerField()       # in paise
-    is_verified       = models.BooleanField(default=False)
-    created_at        = models.DateTimeField(auto_now_add=True)
+    razorpay_signature = models.CharField(max_length=256, blank=True)
+    amount = models.IntegerField() # in paise
+    is_verified = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"Payment {self.razorpay_order_id}"
+
+
+class DeliveryVerification(models.Model):
+  quotation = models.OneToOneField(
+    Quotation, on_delete=models.CASCADE, related_name="delivery"
+  )
+  otp = models.CharField(max_length=6)
+  is_verified = models.BooleanField(default=False)
+  created_at = models.DateTimeField(auto_now_add=True)
+
+  def is_expired(self):
+    return timezone.now() > self.created_at + timezone.timedelta(minutes=5)
+
+  @staticmethod
+  def generate_otp():
+    return str(randint(100000, 999999))

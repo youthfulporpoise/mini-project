@@ -159,3 +159,12 @@ class QuotationResponseSerializer(serializers.ModelSerializer):
       quotation_response.response_items.create(**item)
 
     return quotation_response
+
+
+class GenerateOTPSerializer(serializers.Serializer):
+  quotation_id = serializers.IntegerField()
+
+
+class VerifyOTPSerializer(serializers.Serializer):
+  quotation_id = serializers.IntegerField()
+  otp = serializers.CharField(max_length=6)
