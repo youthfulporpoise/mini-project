@@ -4,6 +4,10 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Bell, User, LogOut, ChevronDown } from "lucide-react";
+import { BACKEND_URL } from "../utility";
+import axios from "axios";
+import Cookies from "js-cookie";
+import { MouseEventHandler } from "react";
 
 export function Header() {
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
@@ -24,14 +28,28 @@ export function Header() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    // Clear all auth data from localStorage
-    localStorage.removeItem("isAuthenticated");
-    localStorage.removeItem("username");
-    localStorage.removeItem("token");
+  const handleLogout: MouseEventHandler = async () => {
+    try {
+      const url = `${BACKEND_URL}/logout/`;
+      const csrfToken = Cookies.get("csrftoken");
+      const options = {
+        headers: {
+          "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
+        },
+        withCredentials: true,
+      };
+
+      // Fix 1: pass empty object as body, options as the config (3rd argument)
+      const response = await axios.post(url, {}, options);
+      console.log(response.data);
+      console.log("Successful Logout");
+    } catch {
+      console.log("Error");
+    }
 
     // Redirect to login page
-    router.push("/");
+    router.push("/login");
   };
 
   return (
