@@ -102,10 +102,16 @@ export interface VendorResponseItem {
   responseItems: VendorResponseItemDetail[];
 }
 
-
-
 export interface LoginResponse {
   id: string;
   username: string;
+  role: string;
+}
+
+export interface userProfile {
+  id: number;
+  name: string;
+  email: string;
+  phone: number;
   role: string;
 }

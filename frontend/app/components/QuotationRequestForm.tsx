@@ -10,9 +10,8 @@ import {
 } from "lucide-react";
 import { BACKEND_URL } from "../utility";
 import axios from "axios";
-import { Quotation , QuotationItems } from "../utility/index";
-import { v4 as uuidv4 } from 'uuid';
-
+import { Quotation, QuotationItems } from "../utility/index";
+import { v4 as uuidv4 } from "uuid";
 
 function FormSection({
   title,
@@ -76,6 +75,9 @@ export default function QuotationRequestForm() {
     submissionDeadline: "",
     deliveryPeriod: 0,
     status: 0,
+    qtReqVerifiedAccountant: false,
+    finalQtVerifiedAccountant: false,
+    qtVerifiedPrincipal: false,
     items: [
       {
         id: uuidv4(),
@@ -89,7 +91,7 @@ export default function QuotationRequestForm() {
   const [status, setStatus] = useState<"published" | null>(null);
 
   const toggleSection = (section: string) => {
-    setExpandedSections((prev ) => ({
+    setExpandedSections((prev) => ({
       ...prev,
       [section]: !prev[section],
     }));
@@ -153,6 +155,9 @@ export default function QuotationRequestForm() {
         submission_deadline: formData.submissionDeadline,
         delivery_period: formData.deliveryPeriod,
         status: formData.status,
+        qt_req_verified_accountant: formData.qtReqVerifiedAccountant,
+        final_qt_verified_accountant: formData.finalQtVerifiedAccountant,
+        qt_verified_principal: formData.qtVerifiedPrincipal,
         items: formData.items.map((item) => ({
           id: item.id,
           name: item.itemName,
@@ -180,7 +185,7 @@ export default function QuotationRequestForm() {
 
         // Reset form data to initial state
         setFormData({
-          id: "",
+          id: uuidv4(),
           category: "",
           quotationTitle: "",
           description: "",
@@ -188,9 +193,12 @@ export default function QuotationRequestForm() {
           submissionDeadline: "",
           deliveryPeriod: 0,
           status: 0,
+          qtReqVerifiedAccountant: false,
+          finalQtVerifiedAccountant: false,
+          qtVerifiedPrincipal: false,
           items: [
             {
-              id: "1",
+              id: uuidv4(),
               itemName: "",
               itemDescription: "",
               amount: 0,

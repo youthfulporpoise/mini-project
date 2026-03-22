@@ -7,7 +7,7 @@ import axios from "axios";
 
 interface VendorResponseFormProps {
   quotationId: string;
-  vendorId: string;
+  vendorId: number;
   quotationItems: Array<{
     id: string;
     itemName: string;
@@ -74,7 +74,7 @@ const VendorResponseForm = ({
     items: true,
   });
 
-  // Initialize response items according to your format
+  // Initialize response items according to the format
   const [responseData, setResponseData] = useState<VendorResponseItem>({
     id: uuidv4(),
     quotation: quotationId,

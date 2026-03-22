@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { BarChart3, Lock, User, Eye, EyeOff, IndianRupee } from "lucide-react";
 import { BACKEND_URL } from "../utility";
 import { LoginResponse } from "../utility/index";
+import Cookies from "js-cookie";
 
 export default function Page() {
   const router = useRouter();
@@ -23,12 +24,20 @@ export default function Page() {
 
     const login = async () => {
       try {
+        //login (withCredentials set to true) for setting cookies from different domain
         const url = `${BACKEND_URL}/login/`;
         const options = {
           headers: {
             "Content-Type": "application/json",
           },
+          withCredentials: true,
+          auth: {
+            username: formData.username,
+            password: formData.password,
+          },
+          xsrfCookieName: "csrftoken",
         };
+
         const response = await axios.post(
           url,
           { username: formData.username, password: formData.password },
@@ -36,23 +45,23 @@ export default function Page() {
         );
         const data = response.data;
 
-        const userData: LoginResponse = {
-          id: data.user_id,
-          username: data.username,
-          role: data.role,
-        };
-        console.log(userData.role)
-        if (userData.role == "HOD") {
-          router.push(`/overview`);
-        } else if (userData.role == "PRINCIPAL") {
-          router.push(`/principal`);
-        } else if (userData.role == "ACCOUNTANT") {
-          router.push(`/accountant`);
-        } else if (userData.role == "VENDOR") {
-          router.push(`/vendor`);
-        } else {
-          router.push(`/admin`);
-        }
+        // 3. fetch profile after login
+        const url2 = `${BACKEND_URL}/profile/`;
+        const profileResponse = await axios.get(url2, {
+          withCredentials: true,
+        });
+        const profileData = profileResponse.data;
+
+        // 4. store in cookie
+        Cookies.set("userProfile", JSON.stringify(profileData), { expires: 1 });
+
+        // 5. redirect by role
+        const role = data.role;
+        if (role === "HOD") router.push("/overview");
+        else if (role === "PRINCIPAL") router.push("/principal");
+        else if (role === "ACCOUNTANT") router.push("/accountant");
+        else if (role === "VENDOR") router.push("/vendor");
+        else router.push("/admin");
       } catch {
         console.log("Error");
         setError("Invalid username or password");

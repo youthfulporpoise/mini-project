@@ -8,11 +8,12 @@ import {
   QuotationItems,
   Quotation,
   VendorResponseItem,
+  userProfile,
 } from "@/app/utility/index";
 import VendorResponseForm from "@/app/components/Vendor/VendorResponseForm";
 import { formatDate } from "@/app/src/utils/DateFormat";
 import { getStatusConfig } from "@/app/src/utils/Status";
-
+import Cookies from "js-cookie";
 const getQuotationTotal = (items: { amount: number }[]) => {
   return items.reduce((sum, item) => sum + (item.amount || 0), 0);
 };
@@ -32,11 +33,27 @@ export default function Page() {
   );
   const [currentVendorSubmittedResponse, setCurrentVendorSubmittedResponse] =
     useState<boolean>(false);
-  const vendorId = "1"; // This should come from your authentication
+
+  const [currentVendorDetails, setCurrentVendorDetails] = useState<userProfile>(
+    {
+      id: -1,
+      name: "",
+      email: "",
+      phone: 0,
+      role: "",
+    },
+  );
+  const getUserDetails = () => {
+    const cookie = Cookies.get("userProfile");
+    if (cookie) setCurrentVendorDetails(JSON.parse(cookie));
+    console.log(JSON.parse(cookie))
+  };
 
   useEffect(() => {
     const fetchQuotation = async () => {
       if (!params.slug) return;
+
+      getUserDetails();
 
       try {
         setLoading(true);
@@ -56,6 +73,9 @@ export default function Page() {
           submissionDeadline: data.submission_deadline,
           deliveryPeriod: data.delivery_period,
           status: data.status,
+          qtReqVerifiedAccountant: data.qt_req_verified_accountant,
+          finalQtVerifiedAccountant: data.final_qt_verified_accountant,
+          qtVerifiedPrincipal: data.qt_verified_principal,
           items: data.items.map(
             (item: {
               id: string;
@@ -73,7 +93,7 @@ export default function Page() {
 
         const data2 = await fetch(`${BACKEND_URL}/responses`);
         const res = await data2.json();
-     const submittedResponseData = res.map(
+        const submittedResponseData = res.map(
           (eachResponse: {
             id: string;
             quotation: string;
@@ -100,12 +120,12 @@ export default function Page() {
             ),
           }),
         );
-        
+
         const quotationResponses = submittedResponseData.filter(
           (each) => each.quotationId == params.slug,
         );
         const vendorSubmitted = quotationResponses.filter(
-          (each) => each.vendorId == vendorId,
+          (each) => each.vendorId == currentVendorDetails.id,
         );
         setCurrentVendorSubmittedResponse(
           vendorSubmitted.length === 0 ? false : true,
@@ -287,7 +307,7 @@ export default function Page() {
         {!currentVendorSubmittedResponse ? (
           <VendorResponseForm
             quotationId={quotation!.id}
-            vendorId={vendorId}
+            vendorId={currentVendorDetails.id}
             quotationItems={quotation!.items}
             setSubmittedResponse={setSubmittedResponse}
           />
@@ -320,7 +340,6 @@ export default function Page() {
                         <h4 className="font-semibold text-gray-900">
                           Vendor ID: {response.vendorId}
                         </h4>
-                      
                       </div>
                       <div className="text-right">
                         <p className="text-sm text-gray-600">Total Quote</p>

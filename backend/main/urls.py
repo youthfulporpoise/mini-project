@@ -2,7 +2,7 @@ from django.urls import path
 from django.views.decorators.csrf import ensure_csrf_cookie
 from main import views
 
-from rest_framework.response import Response
+from django.http import JsonResponse
 from rest_framework.urlpatterns import format_suffix_patterns
 
 # from rest_framework_simplejwt.views import (

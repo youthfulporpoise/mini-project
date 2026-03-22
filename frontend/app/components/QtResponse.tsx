@@ -28,7 +28,7 @@ export const QtResponses = () => {
         const response = await axios.get(url, options);
 
         const data = response.data;
-        console.log(data);
+     
         const backendData: Quotation[] = data.map((data) => ({
           id: data.id,
           category: data.category,
