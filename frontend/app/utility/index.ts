@@ -98,7 +98,7 @@ export interface VendorResponseItemDetail {
 export interface VendorResponseItem {
   id: string;
   quotation: string;
-  vendor: string;
+  vendor: number;
   responseItems: VendorResponseItemDetail[];
 }
 

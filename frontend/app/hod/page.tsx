@@ -9,7 +9,7 @@ import {
   ClipboardEvent,
 } from "react";
 import { useRouter } from "next/navigation";
-import { FileText, Users, ShieldCheck } from "lucide-react";
+import { FileText, Users } from "lucide-react";
 import axios from "axios";
 import { QtResponses } from "../components/QtResponse";
 
@@ -244,7 +244,7 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
 
 // ─── HOD Page ─────────────────────────────────────────────────────────────────
 
-export default function HODPage() {
+export default function Page() {
   const [activeTab, setActiveTab] = useState<
     "quotations" | "responses" | "verify"
   >("quotations");

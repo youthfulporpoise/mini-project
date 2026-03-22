@@ -1,65 +1,54 @@
-'use client'
+"use client";
 import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BACKEND_URL } from "../utility";
-import { Send } from "lucide-react";
+
+
 import axios from "axios";
-import { Quotation } from "../utility/index";
-import { getStatusConfig } from "../src/utils/Status";
-import { formatDate } from "../src/utils/DateFormat";
+import { Quotation } from "@/app/utility/index";
+import { getStatusConfig } from "@/app/src/utils/Status";
+import { formatDate } from "@/app/src/utils/DateFormat";
+import { BACKEND_URL } from "@/app/utility";
 
 const getQuotationTotal = (items: { amount: number }[]) => {
   return items.reduce((sum, item) => sum + (item.amount || 0), 0);
 };
 
-export const QtResponses = () => {
+export default function Page() {
   const [data, setData] = useState<Quotation[]>([]);
 
   useEffect(() => {
     const getQuotations = async () => {
       try {
-        const url = `${BACKEND_URL}/qt/`;
-        const options = {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        };
+        const { data } = await axios.get(`${BACKEND_URL}/qt/`, {
+          withCredentials: true,
+        });
 
-        const response = await axios.get(url, options);
-
-        const data = response.data;
-     
-        const backendData: Quotation[] = data.map((data) => ({
-          id: data.id,
-          category: data.category,
-          quotationTitle: data.title,
-          description: data.description,
-          department: data.department,
-          submissionDeadline: data.submission_deadline,
-          deliveryPeriod: data.delivery_period,
-          status: data.status,
-          // new fields
-          qtReqVerifiedAccountant: data.qt_req_verified_accountant,
-          finalQtVerifiedAccountant: data.final_qt_verified_accountant,
-          qtVerifiedPrincipal: data.qt_verified_principal,
-          items: data.items.map(
-            (item: {
-              id: string;
-              name: string;
-              description: string;
-              amount: number;
-            }) => ({
+        const backendData: Quotation[] = data
+          .map((d: any) => ({
+            id: d.id,
+            category: d.category,
+            quotationTitle: d.title,
+            description: d.description,
+            department: d.department,
+            submissionDeadline: d.submission_deadline,
+            deliveryPeriod: d.delivery_period,
+            status: d.status,
+            qtReqVerifiedAccountant: d.qt_req_verified_accountant,
+            finalQtVerifiedAccountant: d.final_qt_verified_accountant,
+            qtVerifiedPrincipal: d.qt_verified_principal,
+            items: d.items.map((item: any) => ({
               id: item.id,
               itemName: item.name,
               itemDescription: item.description,
               amount: item.amount,
-            }),
-          ),
-        }));
+            })),
+          }))
+          .filter((q: Quotation) => q.qtVerifiedPrincipal === true); // ← only show principal approved
+
         setData(backendData);
       } catch {
-        console.log("Error");
+        console.error("Failed to fetch quotations");
       }
     };
     getQuotations();
@@ -71,17 +60,14 @@ export const QtResponses = () => {
     <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold text-gray-900">
-          Quotation Requests
+          Quotation Requests for Payment
         </h3>
       </div>
       {data.length == 0 ? (
         <div className="flex flex-col items-center justify-center py-12 text-center">
-          <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-            <Send className="w-5 h-5 text-gray-400" />
-          </div>
-          <p className="text-gray-500 text-sm">No quotations yet.</p>
+          <p className="text-gray-500 text-sm">No pending payments.</p>
           <p className="text-gray-400 text-xs mt-1">
-            Create your first request to notify vendors.
+            Quotations approved by principal will appear here.
           </p>
         </div>
       ) : (
@@ -171,4 +157,4 @@ export const QtResponses = () => {
       )}
     </div>
   );
-};
+}

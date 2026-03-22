@@ -29,7 +29,7 @@ export default function QtDetails() {
   useEffect(() => {
     const fetchQuotation = async () => {
       if (!params.slug) return;
-      console.log(params.slug);
+    
       try {
         setLoading(true);
         const response = await axios.get(`${BACKEND_URL}/qt/${params.slug}`, {

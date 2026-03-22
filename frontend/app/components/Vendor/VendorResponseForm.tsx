@@ -1,9 +1,13 @@
-import {  useState } from "react";
-import { VendorResponseItem, VendorResponseItemDetail } from "@/app/utility/index";
+import { useState } from "react";
+import {
+  VendorResponseItem,
+  VendorResponseItemDetail,
+} from "@/app/utility/index";
 import { Send, Package, ChevronDown, ChevronUp } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import { BACKEND_URL } from "@/app/utility";
 import axios from "axios";
+import Cookies from "js-cookie";
 
 interface VendorResponseFormProps {
   quotationId: string;
@@ -136,17 +140,23 @@ const VendorResponseForm = ({
         })),
       };
 
+      const csrfToken = Cookies.get("csrftoken");
       const options = {
         headers: {
           "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
         },
+        withCredentials: true,
       };
       const response = await axios.post(
-        `${BACKEND_URL}/responses.json`,
+        `${BACKEND_URL}/responses/`,
         backendData,
         options,
       );
       console.log("Response:", response.data);
+      setSubmittedResponse(responseData);
+
+      alert("Response submitted successfully!");
 
       setTimeout(() => {
         // Reset sections to expanded
@@ -154,21 +164,12 @@ const VendorResponseForm = ({
           items: true,
         });
       }, 3000);
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Failed to submit quotation. Please try again.");
-    }
-
-    // Update parent component's state
-    setSubmittedResponse(responseData);
-    console.log(responseData);
-    // Show success message
-    alert("Response submitted successfully!");
+  } catch (error) {
+  if (axios.isAxiosError(error)) {
+    console.error("Server response:", JSON.stringify(error.response?.data, null, 2));
+  }
+}
   };
-
-
-
-
 
   return (
     <div className="space-y-4 mt-6 w-[80vw]">
