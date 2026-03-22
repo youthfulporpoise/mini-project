@@ -54,7 +54,7 @@ const transactions: Transaction[] = [
     transaction_id: "TXN-2024-005",
     quotation_id: "Q2024-005",
     payment_status: "Paid",
-    amount: 500,
+    amount: 10000,
     transaction_date: "2024-03-18",
     vendor_name: "DigiKey Electronics",
   },
