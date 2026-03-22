@@ -17,6 +17,9 @@ def get_csrf_cookie(request):
 
 
 urlpatterns = [
+  path("payment/create-order/", views.CreatePaymentOrderView.as_view()),
+  path("payment/verify/",       views.VerifyPaymentView.as_view()),
+
   path("vendors/", views.VendorList.as_view()),
 
   path("quotations/", views.QuotationList.as_view()),

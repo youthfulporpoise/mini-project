@@ -79,3 +79,17 @@ class ResponseItem(models.Model):
     related_name="response_items",
     default=0
   )
+
+
+
+class Payment(models.Model):
+    quotation         = models.ForeignKey(Quotation, on_delete=models.CASCADE)
+    razorpay_order_id   = models.CharField(max_length=256)
+    razorpay_payment_id = models.CharField(max_length=256, blank=True)
+    razorpay_signature  = models.CharField(max_length=256, blank=True)
+    amount            = models.IntegerField()       # in paise
+    is_verified       = models.BooleanField(default=False)
+    created_at        = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Payment {self.razorpay_order_id}"

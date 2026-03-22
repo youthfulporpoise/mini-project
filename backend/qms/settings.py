@@ -65,6 +65,10 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+#payment 
+RAZORPAY_KEY_ID     = "rzp_test_SUBdQiih14Jc24"
+RAZORPAY_KEY_SECRET = "BliZWeVbYCgTChBrQ8oSWYMq"
+
 # Session authentication settings
 
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
