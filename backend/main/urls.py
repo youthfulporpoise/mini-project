@@ -13,7 +13,7 @@ from rest_framework.urlpatterns import format_suffix_patterns
 
 @ensure_csrf_cookie
 def get_csrf_cookie(request):
-  return Response({ "message": "csrf cookie set" })
+  return JsonResponse({ "message": "csrf cookie set" })
 
 
 urlpatterns = [
