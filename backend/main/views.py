@@ -29,7 +29,8 @@ from main.models import (
   QuotationAccepted,
   Item,
   ResponseItem,
-  Payment
+  Payment,
+  DeliveryVerification,
 )
 
 from main.serializers import (
