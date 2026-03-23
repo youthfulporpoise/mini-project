@@ -66,7 +66,7 @@ export interface Quotation {
   description: string;
   department: string;
   submissionDeadline: string;
-  status: 0 | 1 | 2;
+  status: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED";
   deliveryPeriod: number;
   items: QuotationItems[];
   // new fields

@@ -141,9 +141,9 @@ export default function Page() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">Priya Menon</span>
+            <span className="text-sm text-gray-600">User</span>
             <div className="w-9 h-9 rounded-full bg-yellow-100 flex items-center justify-center text-sm font-medium text-yellow-700">
-              PM
+              1
             </div>
           </div>
         </div>

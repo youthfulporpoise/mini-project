@@ -12,7 +12,8 @@ import { BACKEND_URL } from "../utility";
 import axios from "axios";
 import { Quotation, QuotationItems } from "../utility/index";
 import { v4 as uuidv4 } from "uuid";
-
+import Cookies from "js-cookie";
+import { toISOFormat } from "../src/utils/DateFormat";
 function FormSection({
   title,
   icon,
@@ -74,7 +75,7 @@ export default function QuotationRequestForm() {
     department: "",
     submissionDeadline: "",
     deliveryPeriod: 0,
-    status: 0,
+    status: "PENDING",
     qtReqVerifiedAccountant: false,
     finalQtVerifiedAccountant: false,
     qtVerifiedPrincipal: false,
@@ -143,7 +144,7 @@ export default function QuotationRequestForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    console.log(toISOFormat(formData.submissionDeadline));
     try {
       // Camel Case to Snake Case conversion
       const backendData = {
@@ -152,8 +153,8 @@ export default function QuotationRequestForm() {
         title: formData.quotationTitle,
         description: formData.description,
         department: formData.department,
-        submission_deadline: formData.submissionDeadline,
-        delivery_period: formData.deliveryPeriod,
+        submission_deadline: toISOFormat(formData.submissionDeadline),
+        delivery_period: `${formData.deliveryPeriod} 00:00:00`,
         status: formData.status,
         qt_req_verified_accountant: formData.qtReqVerifiedAccountant,
         final_qt_verified_accountant: formData.finalQtVerifiedAccountant,
@@ -165,10 +166,11 @@ export default function QuotationRequestForm() {
           amount: item.amount,
         })),
       };
-
+      const csrfToken = Cookies.get("csrftoken");
       const options = {
         headers: {
           "Content-Type": "application/json",
+          "X-CSRFToken": csrfToken,
         },
       };
       const response = await axios.post(
@@ -185,20 +187,18 @@ export default function QuotationRequestForm() {
 
         // Reset form data to initial state
         setFormData({
-          id: uuidv4(),
           category: "",
           quotationTitle: "",
           description: "",
           department: "",
           submissionDeadline: "",
           deliveryPeriod: 0,
-          status: 0,
+          status: "PENDING",
           qtReqVerifiedAccountant: false,
           finalQtVerifiedAccountant: false,
           qtVerifiedPrincipal: false,
           items: [
             {
-              id: uuidv4(),
               itemName: "",
               itemDescription: "",
               amount: 0,
@@ -302,7 +302,7 @@ export default function QuotationRequestForm() {
           </div>
           <div>
             <label className="block mb-2">
-              Last Date & Time for Submission{" "}
+              Last Date & Time for Submission
               <span className="text-red-600">*</span>
             </label>
             <input

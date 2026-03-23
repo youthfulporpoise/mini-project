@@ -4,7 +4,7 @@ import axios from "axios";
 import { useRouter } from "next/navigation";
 import { BarChart3, Lock, User, Eye, EyeOff, IndianRupee } from "lucide-react";
 import { BACKEND_URL } from "../utility";
-import { LoginResponse } from "../utility/index";
+
 import Cookies from "js-cookie";
 
 export default function Page() {
@@ -61,7 +61,7 @@ export default function Page() {
         else if (role === "PRINCIPAL") router.push("/principal");
         else if (role === "ACCOUNTANT") router.push("/accountant");
         else if (role === "VENDOR") router.push("/vendor");
-        else router.push("/admin");
+        else router.push("/overview");
       } catch {
         console.log("Error");
         setError("Invalid username or password");

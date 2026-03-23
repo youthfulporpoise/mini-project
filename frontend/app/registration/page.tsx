@@ -1,9 +1,10 @@
-// app/register/page.tsx
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from "react";
 import Image from "next/image";
-import quotationImage from '../components/icons/quotation-final.png';
+import quotationImage from "../components/icons/quotation-final.png";
+import { BACKEND_URL } from "../utility";
+import axios from "axios";
 
 interface FormData {
   username: string;
@@ -11,7 +12,7 @@ interface FormData {
   password: string;
   confirmPassword: string;
   phone: string;
-  role: string;
+  role: "Head of Department" | "Principal" | "Accountant" | "Vendor" | "Admin";
 }
 
 export default function Page() {
@@ -21,33 +22,58 @@ export default function Page() {
     password: "",
     confirmPassword: "",
     phone: "+91 ",
-    role: "",
+    role: "Head of Department",
   });
   const [error, setError] = useState<string>("");
 
   const handleChange = (
-    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     setError("");
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-    console.log("Form submitted:", formData);
-    // Add real submission logic here
+
+    try {
+      const url = `${BACKEND_URL}/register/`;
+      const options = {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        withCredentials: true,
+      };
+
+      await axios.post(
+        url,
+        {
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          phone: formData.phone,
+          role: formData.role,
+        },
+        options,
+      );
+      console.log("successful registration ");
+    } catch (error) {
+      console.log("Registration Failed" + error);
+    }
   };
 
   return (
     // Outer page — light gray background like in the image
     <div
       className="min-h-screen flex items-center justify-center p-6"
-      style={{ background: "linear-gradient(135deg, #e8e8f0 0%, #d8d8e8 100%)" }}
+      style={{
+        background: "linear-gradient(135deg, #e8e8f0 0%, #d8d8e8 100%)",
+      }}
     >
       {/* Card wrapper — the floating rounded card in the image */}
       <div
@@ -59,14 +85,14 @@ export default function Page() {
           minHeight: "580px",
         }}
       >
-
         {/* ── Left Panel — purple gradient ── */}
         <div
           className="hidden lg:flex flex-col items-center justify-center px-10 py-12 text-center"
           style={{
             width: "42%",
             flexShrink: 0,
-            background: "linear-gradient(160deg, #6c4ecb 0%, #3b2a8a 60%, #2d1f6e 100%)",
+            background:
+              "linear-gradient(160deg, #6c4ecb 0%, #3b2a8a 60%, #2d1f6e 100%)",
             borderRadius: "24px 0 0 24px",
           }}
         >
@@ -118,7 +144,6 @@ export default function Page() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
-
             {/* Username */}
             <div>
               <label
@@ -141,7 +166,8 @@ export default function Page() {
                 style={{ fontSize: "14px" }}
               />
               <p className="mt-1 text-gray-400" style={{ fontSize: "11px" }}>
-                Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.
+                Required. 150 characters or fewer. Letters, digits and @/./+/-/_
+                only.
               </p>
             </div>
 
@@ -211,7 +237,9 @@ export default function Page() {
                   focus:border-transparent transition-all text-gray-700"
                 style={{ fontSize: "14px" }}
               >
-                <option value="" disabled>Select a role</option>
+                <option value="" disabled>
+                  Select a role
+                </option>
                 <option value="Head of Department">Head of Department</option>
                 <option value="Principal">Principal</option>
                 <option value="Accountant">Accountant</option>

@@ -1,3 +1,4 @@
+'use client'
 import PaymentButton from "@/app/components/PaymentButton";
 import { useParams } from "next/navigation";
 

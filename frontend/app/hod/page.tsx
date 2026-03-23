@@ -1,4 +1,3 @@
-// app/hod/page.tsx
 "use client";
 
 import {
@@ -12,40 +11,50 @@ import { useRouter } from "next/navigation";
 import { FileText, Users } from "lucide-react";
 import axios from "axios";
 import { QtResponses } from "../components/QtResponse";
-
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-
+import { BACKEND_URL } from "../utility";
+import Cookies from "js-cookie";
 // ─── OTP Component ────────────────────────────────────────────────────────────
 
-interface OtpVerifyProps {
-  quotationId: string;
-}
-
-function OtpVerify({ quotationId }: OtpVerifyProps) {
+function OtpVerify({ quotationId }: { quotationId: string }) {
   const [digits, setDigits] = useState<string[]>(
-    Array.from({ length: 6 }, () => "")
+    Array.from({ length: 6 }, () => ""),
   );
-  const [message, setMessage] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [loading, setLoading] = useState<boolean>(false);
-  const [confirmed, setConfirmed] = useState<boolean>(false);
-  const [timer, setTimer] = useState<number>(30);
-  const [canResend, setCanResend] = useState<boolean>(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [confirmed, setConfirmed] = useState(false);
+  const [requesting, setRequesting] = useState(false); // ← new
+  const [requested, setRequested] = useState(false); // ← new
 
   const refs = useRef<Array<HTMLInputElement | null>>(
-    Array.from({ length: 6 }, () => null)
+    Array.from({ length: 6 }, () => null),
   );
 
-  useEffect(() => {
-    if (timer <= 0) {
-      setCanResend(true);
-      return;
+  // ── Request OTP ──────────────────────────────────────────────────────────
+  const handleRequestOtp = async () => {
+    setRequesting(true);
+    setError("");
+    try {
+      const csrfToken = Cookies.get("csrftoken");
+      await axios.post(
+        `${BACKEND_URL}/delivery/generate-otp/`,
+        { quotation_id: quotationId },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          withCredentials: true,
+        },
+      );
+      setRequested(true);
+      setTimeout(() => refs.current[0]?.focus(), 0);
+    } catch {
+      setError("Failed to request OTP. Please try again.");
+    } finally {
+      setRequesting(false);
     }
-    const id = setTimeout(() => setTimer((t) => t - 1), 1000);
-    return () => clearTimeout(id);
-  }, [timer]);
-
-  const isFull = digits.every((d) => d !== "");
+  };
 
   const handleChange = (val: string, i: number) => {
     const clean = val.replace(/\D/g, "").slice(-1);
@@ -53,19 +62,15 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
     next[i] = clean;
     setDigits(next);
     setError("");
-    if (clean && i < 5) {
-      refs.current[i + 1]?.focus();
-    }
+    if (clean && i < 5) refs.current[i + 1]?.focus();
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, i: number) => {
-    if (e.key === "Backspace") {
-      if (!digits[i] && i > 0) {
-        refs.current[i - 1]?.focus();
-        const next = [...digits];
-        next[i - 1] = "";
-        setDigits(next);
-      }
+    if (e.key === "Backspace" && !digits[i] && i > 0) {
+      refs.current[i - 1]?.focus();
+      const next = [...digits];
+      next[i - 1] = "";
+      setDigits(next);
     }
     if (e.key === "ArrowLeft" && i > 0) refs.current[i - 1]?.focus();
     if (e.key === "ArrowRight" && i < 5) refs.current[i + 1]?.focus();
@@ -73,67 +78,46 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
 
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
-    const text = e.clipboardData
-      .getData("text")
-      .replace(/\D/g, "")
-      .slice(0, 6);
-    if (text.length > 0) {
-      const next = Array.from({ length: 6 }, () => "");
-      text.split("").forEach((c, j) => {
-        next[j] = c;
-      });
-      setDigits(next);
-      refs.current[Math.min(text.length, 5)]?.focus();
+    const text = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!text.length) return;
+    const next = Array.from({ length: 6 }, () => "");
+    text.split("").forEach((c, j) => {
+      next[j] = c;
+    });
+    setDigits(next);
+    refs.current[Math.min(text.length, 5)]?.focus();
+  };
+
+  const handleVerify = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      const { data } = await axios.post(
+        `${BACKEND_URL}/delivery/verify-otp/`,
+        { quotation_id: quotationId, otp: digits.join("") },
+        { withCredentials: true },
+      );
+      setMessage(data.message);
+      setConfirmed(true);
+    } catch {
+      setError("Invalid OTP. Please try again.");
+      setDigits(Array.from({ length: 6 }, () => ""));
+      refs.current[0]?.focus();
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleVerify = () => {
-    setError("");
-    setMessage("");
-    setLoading(true);
-
-    const verifyOtp = async () => {
-      try {
-        const url = `${BACKEND_URL}/delivery/verify-otp/`;
-        const options = {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        };
-        const response = await axios.post(
-          url,
-          { quotation_id: quotationId, otp: digits.join("") },
-          options
-        );
-        const data = response.data;
-        setMessage(data.message);
-        setConfirmed(true);
-      } catch {
-        console.log("Error");
-        setError("Invalid OTP. Please try again.");
-        setDigits(Array.from({ length: 6 }, () => ""));
-        refs.current[0]?.focus();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    verifyOtp();
-  };
-
-  const handleResend = () => {
+  const handleReset = () => {
     setDigits(Array.from({ length: 6 }, () => ""));
     setError("");
-    setMessage("OTP resent to vendor device.");
-    setTimer(30);
-    setCanResend(false);
+    setMessage("");
     setConfirmed(false);
-    setTimeout(() => {
-      refs.current[0]?.focus();
-    }, 0);
+    setRequested(false);
+    setTimeout(() => refs.current[0]?.focus(), 0);
   };
 
-  const boxStyle = (i: number): string => {
+  const boxStyle = (i: number) => {
     if (confirmed) return "border-green-500 bg-green-50 text-green-700";
     if (error) return "border-red-400 bg-red-50 text-red-700";
     if (digits[i]) return "border-blue-500 text-blue-700 bg-white";
@@ -142,7 +126,7 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
 
   return (
     <div className="max-w-sm mx-auto py-8">
-      {/* Icon and heading */}
+      {/* Heading */}
       <div className="flex flex-col items-center mb-6 text-center">
         <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-3">
           <svg
@@ -159,24 +143,36 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
           </svg>
         </div>
         <h2 className="text-base font-medium text-gray-800">Verify Delivery</h2>
-        <p className="text-xs text-gray-400 mt-1">
-          Enter the 6-digit OTP provided by the vendor
-        </p>
+        <p className="text-xs text-gray-400 mt-1">Quotation #{quotationId}</p>
       </div>
 
-      {/* Success message */}
+      {/* Success */}
       {message && (
         <div className="mb-4 px-4 py-2.5 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg text-center">
           ✓ {message}
         </div>
       )}
 
-      {/* Error message */}
+      {/* Error */}
       {error && (
         <div className="mb-4 px-4 py-2.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg text-center">
           {error}
         </div>
       )}
+
+      {/* Request OTP button */}
+      <button
+        onClick={handleRequestOtp}
+        disabled={requesting || confirmed}
+        className="w-full py-2.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200
+          rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed mb-4"
+      >
+        {requesting
+          ? "Requesting..."
+          : requested
+            ? "✓ OTP Requested"
+            : "Request OTP from Vendor"}
+      </button>
 
       {/* OTP boxes */}
       <div className="flex gap-2.5 justify-center mb-6">
@@ -194,7 +190,7 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
             onKeyDown={(e) => handleKeyDown(e, i)}
             onPaste={handlePaste}
             disabled={confirmed}
-            style={{ fontFamily: "'JetBrains Mono', 'Courier New', monospace" }}
+            style={{ fontFamily: "'JetBrains Mono', monospace" }}
             className={`w-11 h-14 border rounded-lg text-center text-xl font-semibold
               outline-none transition-all focus:ring-2 focus:ring-blue-400
               focus:border-blue-500 disabled:opacity-60 disabled:cursor-not-allowed
@@ -203,51 +199,37 @@ function OtpVerify({ quotationId }: OtpVerifyProps) {
         ))}
       </div>
 
-      {/* Verify button */}
-      <button
-        type="button"
-        onClick={handleVerify}
-        disabled={!isFull || loading || confirmed}
-        style={{ fontFamily: "'JetBrains Mono', monospace" }}
-        className="w-full py-2.5 text-sm font-medium text-white bg-blue-600
-          rounded-lg hover:bg-blue-700 transition-colors
-          disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {loading ? "Verifying..." : confirmed ? "✓ Confirmed" : "Confirm Delivery"}
-      </button>
-
-      {/* Resend row */}
-      <div className="flex items-center justify-center gap-2 mt-3 text-xs text-gray-400">
-        <span>Didn&apos;t receive OTP?</span>
+      {/* Verify / Reset */}
+      {!confirmed ? (
         <button
-          type="button"
-          onClick={handleResend}
-          disabled={!canResend}
+          onClick={handleVerify}
+          disabled={!digits.every((d) => d !== "") || loading}
           style={{ fontFamily: "'JetBrains Mono', monospace" }}
-          className="text-blue-600 font-medium disabled:text-gray-400
-            disabled:cursor-not-allowed hover:underline"
+          className="w-full py-2.5 text-sm font-medium text-white bg-blue-600
+            rounded-lg hover:bg-blue-700 transition-colors
+            disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Resend
+          {loading ? "Verifying..." : "Confirm Delivery"}
         </button>
-        {!canResend && (
-          <span
-            style={{ fontFamily: "'JetBrains Mono', monospace" }}
-            className="font-semibold text-blue-600"
-          >
-            0:{String(timer).padStart(2, "0")}
-          </span>
-        )}
-      </div>
+      ) : (
+        <button
+          onClick={handleReset}
+          className="w-full py-2.5 text-sm font-medium text-gray-600 bg-gray-100
+            rounded-lg hover:bg-gray-200 transition-colors"
+        >
+          Verify another
+        </button>
+      )}
     </div>
   );
 }
-
 // ─── HOD Page ─────────────────────────────────────────────────────────────────
 
 export default function Page() {
   const [activeTab, setActiveTab] = useState<
     "quotations" | "responses" | "verify"
   >("quotations");
+  const [quotationId, setQuotationId] = useState("");
   const router = useRouter();
 
   return (
@@ -279,8 +261,8 @@ export default function Page() {
                 {tab === "quotations"
                   ? "My quotations"
                   : tab === "responses"
-                  ? "Vendor responses"
-                  : "Verify Delivery"}
+                    ? "Vendor responses"
+                    : "Verify Delivery"}
               </button>
             ))}
           </div>
@@ -322,7 +304,29 @@ export default function Page() {
 
             {/* Verify Delivery tab */}
             {activeTab === "verify" && (
-              <OtpVerify quotationId="5" />
+              <div>
+                {/* Manual quotation ID input */}
+                <div className="mb-2">
+                  <label className="block text-xs text-gray-500 mb-1">
+                    Quotation ID
+                  </label>
+                  <input
+                    type="text"
+                    value={quotationId}
+                    onChange={(e) => setQuotationId(e.target.value)}
+                    placeholder="Enter quotation ID e.g. 5"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                {/* OTP component — re-mounts when ID changes */}
+                {quotationId.trim() && (
+                  <OtpVerify
+                    key={quotationId}
+                    quotationId={quotationId.trim()}
+                  />
+                )}
+              </div>
             )}
           </div>
         </div>

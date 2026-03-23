@@ -16,49 +16,50 @@ import {
   CartesianGrid,
   Legend,
 } from "recharts";
+import TransactionHistory from "./TransactionHistory";
 
-const transactions: Transaction[] = [
-  {
-    transaction_id: "TXN-2024-001",
-    quotation_id: "Q2024-001",
-    payment_status: "Paid",
-    amount: 42500,
-    transaction_date: "2024-01-25",
-    vendor_name: "Dell Technologies",
-  },
-  {
-    transaction_id: "TXN-2024-002",
-    quotation_id: "Q2024-002",
-    payment_status: "Paid",
-    amount: 18500,
-    transaction_date: "2024-01-30",
-    vendor_name: "MathWorks Inc.",
-  },
-  {
-    transaction_id: "TXN-2024-003",
-    quotation_id: "Q2024-003",
-    payment_status: "Paid",
-    amount: 12800,
-    transaction_date: "2024-02-15",
-    vendor_name: "IEEE Conference Services",
-  },
-  {
-    transaction_id: "TXN-2024-004",
-    quotation_id: "Q2024-004",
-    payment_status: "Paid",
-    amount: 22000,
-    transaction_date: "2024-02-28",
-    vendor_name: "Cisco Systems",
-  },
-  {
-    transaction_id: "TXN-2024-005",
-    quotation_id: "Q2024-005",
-    payment_status: "Paid",
-    amount: 10000,
-    transaction_date: "2024-03-18",
-    vendor_name: "DigiKey Electronics",
-  },
-];
+// const transactions: Transaction[] = [
+//   {
+//     transaction_id: "TXN-2024-001",
+//     quotation_id: "Q2024-001",
+//     payment_status: "Paid",
+//     amount: 42500,
+//     transaction_date: "2024-01-25",
+//     vendor_name: "Dell Technologies",
+//   },
+//   {
+//     transaction_id: "TXN-2024-002",
+//     quotation_id: "Q2024-002",
+//     payment_status: "Paid",
+//     amount: 18500,
+//     transaction_date: "2024-01-30",
+//     vendor_name: "MathWorks Inc.",
+//   },
+//   {
+//     transaction_id: "TXN-2024-003",
+//     quotation_id: "Q2024-003",
+//     payment_status: "Paid",
+//     amount: 12800,
+//     transaction_date: "2024-02-15",
+//     vendor_name: "IEEE Conference Services",
+//   },
+//   {
+//     transaction_id: "TXN-2024-004",
+//     quotation_id: "Q2024-004",
+//     payment_status: "Paid",
+//     amount: 22000,
+//     transaction_date: "2024-02-28",
+//     vendor_name: "Cisco Systems",
+//   },
+//   {
+//     transaction_id: "TXN-2024-005",
+//     quotation_id: "Q2024-005",
+//     payment_status: "Paid",
+//     amount: 10000,
+//     transaction_date: "2024-03-18",
+//     vendor_name: "DigiKey Electronics",
+//   },
+// ];
 
 type BackendQuotation = {
   id: number;
@@ -125,22 +126,27 @@ const CATEGORY_COLORS = [
   "#ec4899",
 ];
 
-const mapQuotationStatus = (
-  status: number,
-): QuotationRequestRow["status"] => STATUS_LABELS[status] ?? "Pending";
+const mapQuotationStatus = (status: number): QuotationRequestRow["status"] =>
+  STATUS_LABELS[status] ?? "Pending";
 
 const getRepresentativeQuotationValue = (
   quotationId: number,
   vendorResponses: VendorResponseRow[],
 ) => {
-  const responses = vendorResponses.filter((v) => v.quotation_id === quotationId);
+  const responses = vendorResponses.filter(
+    (v) => v.quotation_id === quotationId,
+  );
   if (responses.length === 0) return 0;
   return Math.min(...responses.map((r) => r.amount));
 };
 
 const Dashboard = () => {
-  const [quotationRequests, setQuotationRequests] = useState<QuotationRequestRow[]>([]);
-  const [vendorResponses, setVendorResponses] = useState<VendorResponseRow[]>([]);
+  const [quotationRequests, setQuotationRequests] = useState<
+    QuotationRequestRow[]
+  >([]);
+  const [vendorResponses, setVendorResponses] = useState<VendorResponseRow[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -162,25 +168,31 @@ const Dashboard = () => {
         }
 
         if (!responseRes.ok) {
-          throw new Error(`Failed to fetch vendor responses: ${responseRes.status}`);
+          throw new Error(
+            `Failed to fetch vendor responses: ${responseRes.status}`,
+          );
         }
 
         const quotationsData: BackendQuotation[] = await quotationRes.json();
-        const responsesData: BackendQuotationResponse[] = await responseRes.json();
+        const responsesData: BackendQuotationResponse[] =
+          await responseRes.json();
 
-        const mappedQuotations: QuotationRequestRow[] = quotationsData.map((quotation) => ({
-          quotation_id: quotation.id,
-          requirements: quotation.description,
-          product_category: quotation.category,
-          status: mapQuotationStatus(quotation.status),
-          created_date: quotation.submission_deadline,
-        }));
+        const mappedQuotations: QuotationRequestRow[] = quotationsData.map(
+          (quotation) => ({
+            quotation_id: quotation.id,
+            requirements: quotation.description,
+            product_category: quotation.category,
+            status: mapQuotationStatus(quotation.status),
+            created_date: quotation.submission_deadline,
+          }),
+        );
 
-        const mappedResponses: VendorResponseRow[] = responsesData.flatMap((response) =>
-          response.response_items.map((item) => ({
-            quotation_id: response.quotation,
-            amount: item.unit_price,
-          })),
+        const mappedResponses: VendorResponseRow[] = responsesData.flatMap(
+          (response) =>
+            response.response_items.map((item) => ({
+              quotation_id: response.quotation,
+              amount: item.unit_price,
+            })),
         );
 
         setQuotationRequests(mappedQuotations);
@@ -196,11 +208,11 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
-  const totalExpenses = useMemo(() => {
-    return transactions
-      .filter((t) => t.payment_status === "Paid")
-      .reduce((sum, t) => sum + t.amount, 0);
-  }, []);
+  // const totalExpenses = useMemo(() => {
+  //   return transactions
+  //     .filter((t) => t.payment_status === "Paid")
+  //     .reduce((sum, t) => sum + t.amount, 0);
+  // }, []);
 
   const totalQuotations = useMemo(() => {
     return vendorResponses.reduce((sum, response) => sum + response.amount, 0);
@@ -228,7 +240,9 @@ const Dashboard = () => {
     return quotationRequests
       .filter((q) => q.status === "Approved")
       .reduce(
-        (sum, q) => sum + getRepresentativeQuotationValue(q.quotation_id, vendorResponses),
+        (sum, q) =>
+          sum +
+          getRepresentativeQuotationValue(q.quotation_id, vendorResponses),
         0,
       );
   }, [quotationRequests, vendorResponses]);
@@ -241,7 +255,8 @@ const Dashboard = () => {
 
   const pendingValue = useMemo(() => {
     return pendingQuotations.reduce(
-      (sum, q) => sum + getRepresentativeQuotationValue(q.quotation_id, vendorResponses),
+      (sum, q) =>
+        sum + getRepresentativeQuotationValue(q.quotation_id, vendorResponses),
       0,
     );
   }, [pendingQuotations, vendorResponses]);
@@ -269,7 +284,10 @@ const Dashboard = () => {
       .forEach((q) => {
         const date = new Date(q.created_date);
         const month = monthNames[date.getMonth()];
-        const value = getRepresentativeQuotationValue(q.quotation_id, vendorResponses);
+        const value = getRepresentativeQuotationValue(
+          q.quotation_id,
+          vendorResponses,
+        );
 
         monthlyMap.set(month, (monthlyMap.get(month) || 0) + value);
       });
@@ -286,31 +304,40 @@ const Dashboard = () => {
     quotationRequests
       .filter((q) => q.status === "Approved")
       .forEach((q) => {
-        const value = getRepresentativeQuotationValue(q.quotation_id, vendorResponses);
+        const value = getRepresentativeQuotationValue(
+          q.quotation_id,
+          vendorResponses,
+        );
         categoryMap.set(
           q.product_category,
           (categoryMap.get(q.product_category) || 0) + value,
         );
       });
 
-    const total = Array.from(categoryMap.values()).reduce((sum, val) => sum + val, 0);
+    const total = Array.from(categoryMap.values()).reduce(
+      (sum, val) => sum + val,
+      0,
+    );
 
-    return Array.from(categoryMap.entries()).map(([category, amount], index) => ({
-      category,
-      amount,
-      percentage: total > 0 ? ((amount / total) * 100).toFixed(1) : "0.0",
-      color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
-    }));
+    return Array.from(categoryMap.entries()).map(
+      ([category, amount], index) => ({
+        category,
+        amount,
+        percentage: total > 0 ? ((amount / total) * 100).toFixed(1) : "0.0",
+        color: CATEGORY_COLORS[index % CATEGORY_COLORS.length],
+      }),
+    );
   }, [quotationRequests, vendorResponses]);
 
-  const recentTransactions = useMemo(() => {
-    return [...transactions]
-      .sort(
-        (a, b) =>
-          new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime(),
-      )
-      .slice(0, 5);
-  }, []);
+  // const recentTransactions = useMemo(() => {
+  //   return [...transactions]
+  //     .sort(
+  //       (a, b) =>
+  //         new Date(b.transaction_date).getTime() -
+  //         new Date(a.transaction_date).getTime(),
+  //     )
+  //     .slice(0, 5);
+  // }, []);
 
   if (loading) {
     return (
@@ -354,20 +381,26 @@ const Dashboard = () => {
               </svg>
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600">Total Paid Expenses</p>
+          <p className="text-sm font-medium text-gray-600">
+            Total Paid Expenses
+          </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
-            ₹{totalExpenses.toLocaleString()}
+            {/* ₹{totalExpenses.toLocaleString()} */}
           </p>
           <p className="text-xs text-green-600 mt-2 flex items-center">
-            <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+            <svg
+              className="w-4 h-4 mr-1"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path
                 fillRule="evenodd"
                 d="M12 7a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0V8.414l-4.293 4.293a1 1 0 01-1.414 0L8 10.414l-4.293 4.293a1 1 0 01-1.414-1.414l5-5a1 1 0 011.414 0L11 10.586 14.586 7H12z"
                 clipRule="evenodd"
               />
             </svg>
-            {transactions.filter((t) => t.payment_status === "Paid").length} transactions
-            completed
+            {/* {transactions.filter((t) => t.payment_status === "Paid").length}{" "} */}
+            transactions completed
           </p>
         </div>
 
@@ -389,7 +422,9 @@ const Dashboard = () => {
               </svg>
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600">Total Vendor Responses</p>
+          <p className="text-sm font-medium text-gray-600">
+            Total Vendor Responses
+          </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
             ₹{totalQuotations.toLocaleString()}
           </p>
@@ -416,12 +451,15 @@ const Dashboard = () => {
               </svg>
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600">Approved Quotations</p>
+          <p className="text-sm font-medium text-gray-600">
+            Approved Quotations
+          </p>
           <p className="text-2xl font-bold text-gray-900 mt-1">
             ₹{approvedAmount.toLocaleString()}
           </p>
           <p className="text-xs text-green-600 mt-2">
-            {quotationsByStatus.find((q) => q.status === "Approved")?.count || 0}{" "}
+            {quotationsByStatus.find((q) => q.status === "Approved")?.count ||
+              0}{" "}
             quotations approved
           </p>
         </div>
@@ -508,13 +546,17 @@ const Dashboard = () => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip formatter={(value) => `₹${Number(value).toLocaleString()}`} />
+              <Tooltip
+                formatter={(value) => `₹${Number(value).toLocaleString()}`}
+              />
             </PieChart>
           </ResponsiveContainer>
 
           <div className="mt-4 pt-4 border-t border-gray-200">
             <div className="flex justify-between items-center">
-              <span className="text-sm font-medium text-gray-600">Total Expenses</span>
+              <span className="text-sm font-medium text-gray-600">
+                Total Expenses
+              </span>
               <span className="text-xl font-bold text-gray-900">
                 ₹
                 {expenseByCategory
@@ -527,7 +569,7 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Transactions */}
-      <div className="grid grid-cols-1 gap-6">
+      {/* <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">
             Recent Transactions
@@ -583,7 +625,8 @@ const Dashboard = () => {
             })}
           </div>
         </div>
-      </div>
+      </div> */}
+      <TransactionHistory />
 
       {/* Quotation Requests Table */}
       <div className="bg-white rounded-xl shadow-md border border-gray-200 p-6">
@@ -645,7 +688,8 @@ const Dashboard = () => {
                           {quote.product_category}
                         </td>
                         <td className="py-3 px-4 text-sm text-gray-900">
-                          {responses.length} vendor{responses.length !== 1 ? "s" : ""}
+                          {responses.length} vendor
+                          {responses.length !== 1 ? "s" : ""}
                           {responses.length > 0 && (
                             <span className="text-xs text-gray-500 ml-1">
                               (₹

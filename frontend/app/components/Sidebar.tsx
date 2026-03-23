@@ -14,13 +14,11 @@ import {
 import Link from "next/link";
 import { menuItem } from "../utility";
 
-const menuItems: menuItem[]  = [
+const menuItems: menuItem[] = [
   { id: 1, icon: Home, label: "Overview", active: true },
   { id: 2, icon: FileText, label: "Quotations", active: false },
-  { id: 3, icon: UserPlus, label: "Registration", active: false },
   { id: 4, icon: CreditCard, label: "Transactions", active: false },
   { id: 7, icon: MessageSquare, label: "Responses", active: false },
-  
 ];
 
 export function Sidebar() {
@@ -39,7 +37,7 @@ export function Sidebar() {
           const Icon = item.icon;
           return (
             <li key={item.id}>
-              <Link href={`/${(item.label).toLowerCase()}`}>
+              <Link href={`/${item.label.toLowerCase()}`}>
                 <button
                   type="button"
                   key={item.label}
