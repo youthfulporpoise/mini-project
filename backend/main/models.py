@@ -49,6 +49,7 @@ class Quotation(models.Model):
   delivery_period = models.DurationField(default=timedelta(days=28))
 
   qt_req_verified_accountant = models.BooleanField(default=False)
+  otp_verified = models.BooleanField(default=False)
   final_qt_verified_accountant = models.BooleanField(default=False)
   qt_verified_principal = models.BooleanField(default=False )
 
