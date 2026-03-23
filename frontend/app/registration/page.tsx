@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent } from "react";
 import Image from "next/image";
 import quotationImage from "../components/icons/quotation-final.png";
 import { BACKEND_URL } from "../utility";
 import axios from "axios";
+import { redirect, useRouter } from "next/navigation";
 
 interface FormData {
   username: string;
@@ -12,7 +13,7 @@ interface FormData {
   password: string;
   confirmPassword: string;
   phone: string;
-  role: "Head of Department" | "Principal" | "Accountant" | "Vendor" | "Admin";
+  role: "HOD" | "PRINCIPAL" | "ACCOUNTANT" | "VENDOR" | "ADMIN";
 }
 
 export default function Page() {
@@ -22,9 +23,11 @@ export default function Page() {
     password: "",
     confirmPassword: "",
     phone: "+91 ",
-    role: "Head of Department",
+    role: "HOD",
   });
   const [error, setError] = useState<string>("");
+
+  const router = useRouter();
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -50,7 +53,7 @@ export default function Page() {
         withCredentials: true,
       };
 
-      await axios.post(
+      const response = await axios.post(
         url,
         {
           username: formData.username,
@@ -61,9 +64,22 @@ export default function Page() {
         },
         options,
       );
+      const data = response.data;
+      console.log(data);
+      const role = formData.role;
+      if (role === "HOD") redirect("/hod");
+      else if (role === "PRINCIPAL") router.push("/principal");
+      else if (role === "ACCOUNTANT") router.push("/accountant");
+      else if (role === "VENDOR") router.push("/vendor");
+      else router.push("/overview");
+
       console.log("successful registration ");
     } catch (error) {
       console.log("Registration Failed" + error);
+      if (axios.isAxiosError(error)) {
+        const usernameError = error.response?.data?.username;
+        if (usernameError) setError(usernameError);
+      }
     }
   };
 
@@ -240,11 +256,11 @@ export default function Page() {
                 <option value="" disabled>
                   Select a role
                 </option>
-                <option value="Head of Department">Head of Department</option>
-                <option value="Principal">Principal</option>
-                <option value="Accountant">Accountant</option>
-                <option value="Vendor">Vendor</option>
-                <option value="Admin">Admin</option>
+                <option value="HOD">Head of Department</option>
+                <option value="PRINCIPAL">Principal</option>
+                <option value="ACCOUNTANT">Accountant</option>
+                <option value="VENDOR">Vendor</option>
+                <option value="ADMIN">Admin</option>
               </select>
             </div>
 
