@@ -14,6 +14,7 @@ import { Quotation, QuotationItems } from "../utility/index";
 import { v4 as uuidv4 } from "uuid";
 import Cookies from "js-cookie";
 import { toISOFormat } from "../src/utils/DateFormat";
+import { redirect, RedirectType } from "next/navigation";
 function FormSection({
   title,
   icon,
@@ -187,6 +188,7 @@ export default function QuotationRequestForm() {
 
         // Reset form data to initial state
         setFormData({
+          id: uuidv4(),
           category: "",
           quotationTitle: "",
           description: "",
@@ -199,6 +201,7 @@ export default function QuotationRequestForm() {
           qtVerifiedPrincipal: false,
           items: [
             {
+              id: uuidv4(),
               itemName: "",
               itemDescription: "",
               amount: 0,
@@ -214,8 +217,8 @@ export default function QuotationRequestForm() {
       }, 3000);
     } catch (error) {
       console.error("Error:", error);
-      alert("Failed to submit quotation. Please try again.");
     }
+    redirect("/hod", RedirectType.replace);
   };
   if (status) {
     return (
@@ -228,11 +231,6 @@ export default function QuotationRequestForm() {
           Your quotation request has been published and vendors will be
           notified.
         </p>
-        <div className="bg-gray-100 p-4 rounded-lg inline-block">
-          <p className="text-sm">
-            Quotation ID: <strong>{formData.id}</strong>
-          </p>
-        </div>
       </div>
     );
   }
