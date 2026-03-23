@@ -315,7 +315,7 @@ class VerifyOTPView(views.APIView):
     try:
       delivery = DeliveryVerification.objects.get(
         quotation__id=quotation_id,
-        is_verified=Fals
+        is_verified=False
       )
     except DeliveryVerification.DoesNotExist:
       return Response(
