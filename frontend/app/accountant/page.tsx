@@ -42,7 +42,11 @@ export default function Page() {
         setIncoming(mapped.filter((q) => !q.qtReqVerifiedAccountant));
         setFinalQueue(
           mapped.filter(
-            (q) => q.qtReqVerifiedAccountant && !q.finalQtVerifiedAccountant,
+            (q) =>
+              q.qtReqVerifiedAccountant &&
+              !q.finalQtVerifiedAccountant &&
+              q.status != "REJECTED" &&
+              q.otpVerified,
           ),
         );
       } catch {
@@ -90,7 +94,11 @@ export default function Page() {
         { final_qt_verified_accountant: true },
         { headers: { "Content-Type": "application/json" } },
       );
-      setFinalQueue((prev) => prev.filter((q) => q.id !== id && q.otpVerified));
+      setFinalQueue((prev) =>
+        prev.filter(
+          (q) => q.id !== id && q.otpVerified && q.status != "REJECTED",
+        ),
+      );
     } catch {
       console.error("Failed to send to principal");
     }
@@ -102,7 +110,11 @@ export default function Page() {
         { status: "REJECTED" },
         { headers: { "Content-Type": "application/json" } },
       );
-      setFinalQueue((prev) => prev.filter((q) => q.id !== id && q.otpVerified));
+      setFinalQueue((prev) =>
+        prev.filter(
+          (q) => q.id !== id && q.otpVerified && q.status != "REJECTED",
+        ),
+      );
     } catch {
       console.error("Rejected the request by principal");
     }
