@@ -73,6 +73,7 @@ export interface Quotation {
   qtReqVerifiedAccountant: boolean | false;
   finalQtVerifiedAccountant: boolean | false;
   qtVerifiedPrincipal: boolean | false;
+  otpVerified: boolean | false; 
 }
 
 //Vendors

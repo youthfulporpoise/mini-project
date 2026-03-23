@@ -61,9 +61,25 @@ export default function Page() {
         { qt_req_verified_accountant: true },
         { headers: { "Content-Type": "application/json" } },
       );
-      setIncoming((prev) => prev.filter((q) => q.id !== id));
+      setIncoming((prev) =>
+        prev.filter((q) => q.id !== id && q.status != "REJECTED"),
+      );
     } catch {
       console.error("Failed to forward");
+    }
+  };
+  const rejectQuotationByAccountant = async (id: string) => {
+    try {
+      await axios.patch(
+        `${BACKEND_URL}/qt/${id}`,
+        { status: "REJECTED" },
+        { headers: { "Content-Type": "application/json" } },
+      );
+      setIncoming((prev) =>
+        prev.filter((q) => q.id !== id && q.status != "REJECTED"),
+      );
+    } catch {
+      console.error("REJECTED the response by the accountant");
     }
   };
 
@@ -74,9 +90,21 @@ export default function Page() {
         { final_qt_verified_accountant: true },
         { headers: { "Content-Type": "application/json" } },
       );
-      setFinalQueue((prev) => prev.filter((q) => q.id !== id));
+      setFinalQueue((prev) => prev.filter((q) => q.id !== id && q.otpVerified));
     } catch {
       console.error("Failed to send to principal");
+    }
+  };
+  const rejectQuotationByPrincipal = async (id: string) => {
+    try {
+      await axios.patch(
+        `${BACKEND_URL}/qt/${id}`,
+        { status: "REJECTED" },
+        { headers: { "Content-Type": "application/json" } },
+      );
+      setFinalQueue((prev) => prev.filter((q) => q.id !== id && q.otpVerified));
+    } catch {
+      console.error("Rejected the request by principal");
     }
   };
 
@@ -224,7 +252,7 @@ export default function Page() {
                             key={item.id}
                             className="text-xs bg-white border border-gray-200 rounded-md px-2 py-1 text-gray-600"
                           >
-                            {item.itemName} × {item.amount}
+                            {item.itemName} : ₹{item.amount}
                           </span>
                         ))}
                       </div>
@@ -237,7 +265,10 @@ export default function Page() {
                           <Send className="w-3 h-3" />
                           Forward to vendors
                         </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                        <button
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                          onClick={() => rejectQuotationByAccountant(q.id)}
+                        >
                           <XCircle className="w-3 h-3" />
                           Reject
                         </button>
@@ -314,7 +345,10 @@ export default function Page() {
                           <CheckCircle className="w-3 h-3" />
                           Send to principal
                         </button>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                        <button
+                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                          onClick={() => rejectQuotationByPrincipal(q.id)}
+                        >
                           <XCircle className="w-3 h-3" />
                           Reject
                         </button>
