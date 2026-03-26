@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from main.models import (
-  Vendor,
   Quotation,
   QuotationResponse,
   QuotationAccepted,
@@ -48,12 +47,6 @@ class UserSerializer(serializers.ModelSerializer):
     ]
 
 
-class VendorSerializer(serializers.ModelSerializer):
-  class Meta:
-    model = Vendor
-    fields = ["id", "name", "address", "email"]
-
-
 class QuotationSerializer(serializers.ModelSerializer):
   class Meta:
     model = Quotation
@@ -65,7 +58,8 @@ class QuotationSerializer(serializers.ModelSerializer):
       "description",
       "submission_deadline",
       "status",
-      "delivery_period"
+      "delivery_period",
+      "created_by",
     ]
 
 
@@ -147,6 +141,7 @@ class ResponseItemSerializer(serializers.ModelSerializer):
 
 class QuotationResponseSerializer(serializers.ModelSerializer):
   response_items = ResponseItemSerializer(many=True)
+  vendor = serializers.PrimaryKeyRelatedField(read_only=True)
 
   class Meta:
     model = QuotationResponse
@@ -154,6 +149,7 @@ class QuotationResponseSerializer(serializers.ModelSerializer):
 
   def create(self, validated_data):
     items_data = validated_data.pop("response_items")
+    validated_data["vendor"] = self.context["request"].user
     quotation_response = QuotationResponse.objects.create(**validated_data)
 
     for item in items_data:

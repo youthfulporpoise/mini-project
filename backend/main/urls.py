@@ -23,8 +23,6 @@ urlpatterns = [
   path("delivery/generate-otp/", views.GenerateOTPView.as_view()),
   path("delivery/verify-otp/", views.VerifyOTPView.as_view()),
 
-  path("vendors/", views.VendorList.as_view()),
-
   path("quotations/", views.QuotationList.as_view()),
   path("quotations/<int:pk>", views.QuotationDetail.as_view()),
   path("quotations/accepted/", views.QuotationAcceptedList.as_view()),

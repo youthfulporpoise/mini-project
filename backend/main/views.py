@@ -23,7 +23,6 @@ from rest_framework import (
 )
 
 from main.models import (
-  Vendor,
   Quotation,
   QuotationResponse,
   QuotationAccepted,
@@ -34,7 +33,6 @@ from main.models import (
 )
 
 from main.serializers import (
-  VendorSerializer,
   QuotationSerializer,
   QuotationResponseSerializer,
   QuotationAcceptedSerializer,
@@ -195,29 +193,61 @@ class ProfileView(generics.ListAPIView):
 ###########################################
 
 
-class VendorList(generics.ListCreateAPIView):
-  permission_class = [permissions.AllowAny]
-  queryset = Vendor.objects.all()
-  serializer_class = VendorSerializer
-
-
 class QuotationList(generics.ListCreateAPIView):
-  permission_classes = [permissions.AllowAny]
-  queryset = Quotation.objects.all()
+  permission_classes = [permissions.IsAuthenticated]
   serializer_class = QuotationSerializer
+
+  def get_queryset(self):
+    user = self.request.user
+
+    if user.role == "HOD":
+      return Quotation.objects.filter(created_by=user.id)
+    else:
+      return Quotation.objects.all()
+  
+  def perform_create(self, serializer):
+    user = self.request.user
+
+    if user.role == "HOD":
+      serializer.save(created_by=self.request.user)
+    else:
+      return Response({
+        "message": "not authorized to create a quotation",
+        "status": status.HTTP_400_BAD_REQUEST,
+      })
 
 
 class QuotationResponseList(generics.ListCreateAPIView):
-  permission_classes = [permissions.AllowAny]
-  queryset = QuotationResponse.objects.all()
+  permission_classes = [permissions.IsAuthenticated]
   serializer_class = QuotationResponseSerializer
 
+  def get_queryset(self):
+    user = self.request.user
+
+    if user.role == "HOD":
+      return QuotationResponse.objects.filter(quotation__created_by=user)
+    elif user.role == "VENDOR":
+      return QuotationResponse.objects.filter(vendor__id=user.id)
+    elif user.role in ("PRINCIPAL", "ACCOUNTANT", "ADMIN"):
+      return QuotationResponse.objects.all()
+    else:
+      return QuotationResponse.objects.none()
+    
+  def perform_create(self, serializer):
+    user = self.request.user
+
+    if user.role == "VENDOR":
+      serializer.save(vendor=user)
+    else:
+      return Response({
+        "message": "not a vendor",
+        "status": status.HTTP_400_BAD_REQUEST,
+      })
 
 class QuotationResponseDetail(generics.RetrieveUpdateDestroyAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = QuotationResponse.objects.all()
   serializer_class = QuotationResponseSerializer
-
 
 class ResponseItemList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
@@ -262,7 +292,7 @@ class GenerateOTPView(views.APIView):
     serializer = GenerateOTPSerializer(data=request.data)
     if not serializer.is_valid():
       return Response(
-        serializers.errors, status=status.HTTP_400_BAD_REQUEST 
+        serializer.errors, status=status.HTTP_400_BAD_REQUEST 
       )
 
     quotation_id = serializer.validated_data["quotation_id"]
@@ -285,7 +315,7 @@ class GenerateOTPView(views.APIView):
       message=(
         f"Quotation ID: {quotation.id}\n"
         f"Delivery Verification OTP: {otp_code}\n"
-        "This OTP is valid for 5 minutes.\n",
+        "This OTP is valid for 5 minutes.\n"
       ),
       from_email=settings.DEFAULT_FROM_EMAIL,
       recipient_list=[request.user.email],
@@ -305,7 +335,7 @@ class VerifyOTPView(views.APIView):
     serializer = VerifyOTPSerializer(data=request.data)
     if not serializer.is_valid():
       return Response(
-        serializers.errors,
+        serializer.errors,
         status=status.HTTP_400_BAD_REQUEST,
       )
 
@@ -329,7 +359,7 @@ class VerifyOTPView(views.APIView):
         status=status.HTTP_400_BAD_REQUEST,
       )
 
-    if delivery_otp != otp_input:
+    if delivery.otp != otp_input:
       return Response(
         {"error": "OTP does not match"},
         status=status.HTTP_400_BAD_REQUEST,

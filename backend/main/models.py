@@ -27,12 +27,6 @@ def submission_deadline_default():
   return timezone.now() + timedelta(days=7)
 
 
-class Vendor(models.Model):
-  name = models.CharField(max_length=64)
-  address = models.TextField()
-  email = models.CharField(max_length=64)
-
-
 class Quotation(models.Model):
   class Status(models.TextChoices):
     PENDING = "PENDING", "Pending"
@@ -47,16 +41,16 @@ class Quotation(models.Model):
   submission_deadline = models.DateTimeField(default=submission_deadline_default)
   status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
   delivery_period = models.DurationField(default=timedelta(days=28))
+  created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="quotations")
 
   qt_req_verified_accountant = models.BooleanField(default=False)
-  otp_verified = models.BooleanField(default=False)
   final_qt_verified_accountant = models.BooleanField(default=False)
   qt_verified_principal = models.BooleanField(default=False )
 
 
 class QuotationResponse(models.Model):
   quotation = models.ForeignKey(Quotation, on_delete=models.CASCADE)
-  vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE)
+  vendor = models.ForeignKey(User, on_delete=models.CASCADE)
 
 
 class QuotationAccepted(models.Model):

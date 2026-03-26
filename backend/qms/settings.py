@@ -65,6 +65,14 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# email test
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'        # SMTP provider
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = '19skpersonal@gmail.com'
+EMAIL_HOST_PASSWORD = 'rhldhzrtxophpzkl'
+DEFAULT_FROM_EMAIL = 'vendor@email.com'
 
 # RazorPay payment settings
 
