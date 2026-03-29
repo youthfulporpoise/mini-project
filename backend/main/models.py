@@ -110,3 +110,46 @@ class DeliveryVerification(models.Model):
   @staticmethod
   def generate_otp():
     return str(randint(100000, 999999))
+
+
+class PaymentArchive(models.Model):
+    class Status(models.TextChoices):
+        CREATED    = "created",    "Created"
+        AUTHORIZED = "authorized", "Authorized"
+        CAPTURED   = "captured",   "Captured"
+        REFUNDED   = "refunded",   "Refunded"
+        FAILED     = "failed",     "Failed"
+
+    # Link to your app's data
+    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name="payments")
+
+    # Razorpay identifiers
+    razorpay_order_id = models.CharField(max_length=100, unique=True)
+    razorpay_payment_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    razorpay_signature = models.CharField(max_length=255, blank=True, null=True)
+
+    # Transaction details (mirrored from Razorpay response)
+    amount = models.PositiveIntegerField(help_text="Amount in paise (100 = ₹1)")
+    currency = models.CharField(max_length=10, default="INR")
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.CREATED)
+    method = models.CharField(max_length=50, blank=True)   # upi, card, netbanking, etc.
+    email = models.EmailField(blank=True)
+    contact = models.CharField(max_length=20, blank=True)
+
+    # Full raw response for auditing
+    raw_response = models.JSONField(default=dict)
+
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    captured_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Payment Archive"
+
+    def __str__(self):
+        return f"{self.razorpay_order_id} | {self.status} | ₹{self.amount / 100:.2f}"
+
+    @property
+    def amount_inr(self):
+        return self.amount / 100

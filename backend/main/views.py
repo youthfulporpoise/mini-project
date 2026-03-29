@@ -1,11 +1,12 @@
-from django.shortcuts import render
-from django.core.mail import send_mail
-from rest_framework.response import Response
-
 import razorpay
 import hmac
 import hashlib
+
+from django.shortcuts import render
+from django.core.mail import send_mail
+from rest_framework.response import Response
 from django.conf import settings
+from django.http import JsonResponse
 
 from django.contrib.auth import (
   get_user_model,
@@ -30,6 +31,7 @@ from main.models import (
   ResponseItem,
   Payment,
   DeliveryVerification,
+  PaymentArchive,
 )
 
 from main.serializers import (
@@ -43,6 +45,12 @@ from main.serializers import (
   UserSerializer,
   GenerateOTPSerializer,
   VerifyOTPSerializer,
+)
+
+from main.services import (
+  create_razorpay_order,
+  fetch_payment,
+  verify_signature,
 )
 
 from main.permissions import (
@@ -426,3 +434,76 @@ class VerifyOTPView(views.APIView):
       },
       status=status.HTTP_200_OK,
     )
+
+
+@login_required
+def initiate_payment(request):
+    """Step 1: Create a Razorpay order and archive it with 'created' status."""
+
+    amount_inr = 499.00  # replace with your actual amount logic
+
+    rz_order = create_razorpay_order(amount_inr, notes={"user_id": str(request.user.id)})
+
+    # Archive the order immediately
+    PaymentArchive.objects.create(
+        user=request.user,
+        razorpay_order_id=rz_order["id"],
+        amount=rz_order["amount"],
+        currency=rz_order["currency"],
+        status=PaymentArchive.Status.CREATED,
+        raw_response=rz_order,
+    )
+
+    return JsonResponse({
+        "order_id": rz_order["id"],
+        "amount":   rz_order["amount"],
+        "currency": rz_order["currency"],
+        "key":      settings.RAZORPAY_KEY_ID,
+    })
+
+
+# Razorpay posts here; protect via signature check instead
+@csrf_exempt
+def payment_callback(request):
+    """Step 2: Called after user completes payment on the frontend."""
+
+    if request.method != "POST":
+        return JsonResponse(
+          {"error": "Method not allowed"},
+          status=status.HTTP_405_METHOD_NOT_ALLOWED
+        )
+
+    data = request.POST
+    order_id = data.get("razorpay_order_id")
+    payment_id = data.get("razorpay_payment_id")
+    signature = data.get("razorpay_signature")
+
+    try:
+        archive = PaymentArchive.objects.get(razorpay_order_id=order_id)
+    except PaymentArchive.DoesNotExist:
+        return JsonResponse({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    # Verify signature first — never trust unverified callbacks
+    if not verify_signature(order_id, payment_id, signature):
+        archive.status = PaymentArchive.Status.FAILED
+        archive.save(update_fields=["status"])
+        return JsonResponse(
+          {"error": "Invalid signature"},
+          status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # Fetch full payment details from Razorpay API
+    payment_data = fetch_payment(payment_id)
+
+    # Update and archive
+    archive.razorpay_payment_id = payment_id
+    archive.razorpay_signature = signature
+    archive.status = payment_data.get("status", PaymentArchive.Status.CAPTURED)
+    archive.method = payment_data.get("method", "")
+    archive.email = payment_data.get("email", "")
+    archive.contact = payment_data.get("contact", "")
+    archive.raw_response = payment_data
+    archive.captured_at = timezone.now()
+    archive.save()
+
+    return JsonResponse({"status": "success", "payment_id": payment_id})
