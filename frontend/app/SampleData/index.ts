@@ -94,3 +94,16 @@ export const quotations = [
     ],
   },
 ];
+
+
+export const  navLinks = [
+  { label: "Features", href: "#features" },
+  { label: "How it works", href: "#workflow" },
+  { label: "Roles", href: "#roles" },
+  { label: "Pricing", href: "#pricing" }, 
+];
+
+export const navActions = [
+  { label: "Sign in", href: "/login", className: "btn-ghost" },
+  { label: "Get started", href: "/registration", className: "btn-primary" },
+];

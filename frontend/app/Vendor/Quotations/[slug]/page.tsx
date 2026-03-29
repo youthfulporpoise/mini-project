@@ -1,412 +1,222 @@
 "use client";
+
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Sidebar } from "@/app/components/Vendor/Sidebar";
-import { BACKEND_URL } from "@/app/utility";
 import axios from "axios";
-import {
-  QuotationItems,
-  Quotation,
-  VendorResponseItem,
-  userProfile,
-} from "@/app/utility/index";
-import VendorResponseForm from "@/app/components/Vendor/VendorResponseForm";
-import { formatDate } from "@/app/src/utils/DateFormat";
-import { getStatusConfig } from "@/app/src/utils/Status";
 import Cookies from "js-cookie";
-const getQuotationTotal = (items: { amount: number }[]) => {
-  return items.reduce((sum, item) => sum + (item.amount || 0), 0);
-};
+import { ArrowLeft, FileText, CheckCircle2, Clock, Package } from "lucide-react";
+import VendorResponseForm from "@/app/components/Vendor/VendorResponseForm"; // Adjust path if needed
+import { BACKEND_URL } from "@/app/utility";
+import { fetchResponses } from "@/app/utility/api";
+import { Quotation, VendorResponseItem } from "@/app/utility/index";
 
-export default function Page() {
-  const params = useParams();
+export default function VendorQuotationDetails() {
   const router = useRouter();
-  const [quotation, setQuotation] = useState<Quotation>();
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [submittedResponse, setSubmittedResponse] = useState<
-    VendorResponseItem[] | null
-  >([]);
+  const params = useParams();
+  const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
 
-  const [vendorResponses, setVendorResponses] = useState<VendorResponseItem[]>(
-    [],
-  );
-  const [currentVendorSubmittedResponse, setCurrentVendorSubmittedResponse] =
-    useState<boolean>(false);
-
-  const [currentVendorDetails, setCurrentVendorDetails] = useState<userProfile>(
-    {
-      id: -1,
-      name: "",
-      email: "",
-      phone: 0,
-      role: "",
-    },
-  );
-  const getUserDetails = () => {
-    const cookie = Cookies.get("userProfile");
-    if (cookie) setCurrentVendorDetails(JSON.parse(cookie));
-    console.log(JSON.parse(cookie))
-  };
+  const [quotation, setQuotation] = useState<Quotation | null>(null);
+  const [existingResponse, setExistingResponse] = useState<any | null>(null);
+  const [vendorProfile, setVendorProfile] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchQuotation = async () => {
-      if (!params.slug) return;
+    if (!slug) return;
 
-      getUserDetails();
-
+    const loadData = async () => {
+      setIsLoading(true);
       try {
-        setLoading(true);
-        const response = await axios.get(`${BACKEND_URL}/qt/${params.slug}`, {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        const data = response.data;
+        // 1. Get Vendor ID from Cookie
+        let currentVendorId = null;
+        const cookieData = Cookies.get("userProfile");
+        if (cookieData) {
+          const profile = JSON.parse(decodeURIComponent(cookieData));
+          setVendorProfile(profile);
+          currentVendorId = profile.id;
+        }
 
-        const backendData: Quotation = {
-          id: data.id,
-          category: data.category,
-          quotationTitle: data.title,
-          description: data.description,
-          department: data.department,
-          submissionDeadline: data.submission_deadline,
-          deliveryPeriod: data.delivery_period,
-          status: data.status,
-          qtReqVerifiedAccountant: data.qt_req_verified_accountant,
-          finalQtVerifiedAccountant: data.final_qt_verified_accountant,
-          qtVerifiedPrincipal: data.qt_verified_principal,
-          items: data.items.map(
-            (item: {
-              id: string;
-              name: string;
-              description: string;
-              amount: number;
-            }) => ({
-              id: item.id,
-              itemName: item.name,
-              itemDescription: item.description,
-              amount: item.amount,
-            }),
-          ),
+        // 2. Fetch Quotation Details
+        const qtResponse = await axios.get(`${BACKEND_URL}/qt/${slug}`);
+        const qtData = qtResponse.data;
+        
+        const formattedQuotation: Quotation = {
+          id: qtData.id,
+          category: qtData.category,
+          quotationTitle: qtData.title,
+          description: qtData.description,
+          department: qtData.department,
+          submissionDeadline: qtData.submission_deadline,
+          deliveryPeriod: qtData.delivery_period,
+          status: qtData.status,
+          qtReqVerifiedAccountant: qtData.qt_req_verified_accountant,
+          finalQtVerifiedAccountant: qtData.final_qt_verified_accountant,
+          qtVerifiedPrincipal: qtData.qt_verified_principal,
+          items: qtData.items.map((item: any) => ({
+            id: item.id,
+            itemName: item.name,
+            itemDescription: item.description,
+            amount: item.amount,
+          })),
         };
+        setQuotation(formattedQuotation);
 
-        const data2 = await fetch(`${BACKEND_URL}/responses`);
-        const res = await data2.json();
-        const submittedResponseData = res.map(
-          (eachResponse: {
-            id: string;
-            quotation: string;
-            vendor: string;
-            response_items: [];
-          }) => ({
-            responseId: eachResponse.id,
-            quotationId: eachResponse.quotation,
-            vendorId: eachResponse.vendor,
-            responseItems: eachResponse.response_items.map(
-              (eachItem: {
-                item: string;
-                brand_model: string;
-                unit_price: number;
-                description: string;
-                delivery_period: string;
-              }) => ({
-                itemId: eachItem.item,
-                brandModel: eachItem.brand_model,
-                unitPrice: eachItem.unit_price,
-                description: eachItem.description,
-                deliveryPeriod: eachItem.delivery_period,
-              }),
-            ),
-          }),
-        );
-
-        const quotationResponses = submittedResponseData.filter(
-          (each) => each.quotationId == params.slug,
-        );
-        const vendorSubmitted = quotationResponses.filter(
-          (each) => each.vendorId == currentVendorDetails.id,
-        );
-        setCurrentVendorSubmittedResponse(
-          vendorSubmitted.length === 0 ? false : true,
-        );
-        setVendorResponses(quotationResponses);
-
-        setQuotation(backendData);
-        setError(null);
-      } catch (err) {
-        console.error("Error fetching quotation:", err);
-        setError("Failed to load quotation");
+        // 3. Fetch Responses & Check if this Vendor already submitted
+        if (currentVendorId) {
+          const allResponses = await fetchResponses();
+          const myResponse = allResponses.find(
+            (r: any) => String(r.quotation) === String(slug) && String(r.vendor) === String(currentVendorId)
+          );
+          
+          if (myResponse) {
+            setExistingResponse(myResponse);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching data:", error);
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
 
-    fetchQuotation();
-  }, [params.slug]);
+    loadData();
+  }, [slug]);
 
-  if (loading) {
+  if (isLoading) {
     return (
-      <div className="flex">
-        <Sidebar />
-        <div className="flex items-center justify-center w-full h-screen">
-          <div className="text-lg text-gray-600">Loading quotation...</div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error || !quotation) {
-    return (
-      <div className="flex">
-        <Sidebar />
-        <div className="flex flex-col items-center justify-center w-full h-screen">
-          <div className="text-lg text-red-600 mb-4">
-            {error || "Quotation not found"}
+      <div className="flex min-h-screen bg-[#F2F2F2] font-sans">
+   
+        <div className="flex flex-1 items-center justify-center">
+          <div className="flex flex-col items-center gap-3 text-[#929090]">
+            <div className="h-8 w-8 animate-spin rounded-full border-[3px] border-[#FB4D27] border-r-transparent" />
+            <p className="text-[13px] font-medium">Checking quotation status...</p>
           </div>
-          <button
-            onClick={() => router.back()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Go Back
-          </button>
         </div>
       </div>
     );
   }
 
-  const statusConfig = getStatusConfig(quotation.status);
-  const StatusIcon = statusConfig.icon;
+  if (!quotation) return null;
+
+  const totalEstBudget = quotation.items.reduce((sum, item) => sum + (Number(item.amount) || 0), 0);
 
   return (
-    <div className="flex h-screen">
-      <Sidebar />
-      <div className="p-5 w-full overflow-y-scroll h-screen">
-        {/* Quotation Details */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw]">
-          <div key={quotation.id}>
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">
-                Quotation Details - {quotation.id}
-              </h3>
-              <button
-                onClick={() => router.back()}
-                className="text-blue-600 hover:text-blue-700"
-              >
-                ← Back
-              </button>
+    <div className="flex min-h-screen bg-[#F2F2F2] font-sans">
+
+      <main className="flex-1 px-[clamp(20px,4vw,40px)] py-[clamp(24px,4vw,40px)] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] max-md:ml-[68px]">
+        <div className="mx-auto max-w-[1000px]">
+          
+          <button
+            onClick={() => router.back()}
+            className="mb-6 inline-flex items-center gap-2 text-[13.5px] font-semibold text-[#929090] transition-colors hover:text-[#111110]"
+          >
+            <ArrowLeft size={16} /> Back to Dashboard
+          </button>
+
+          {/* ── Quotation Header ── */}
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-6 rounded-[14px] border border-black/[0.06] bg-white p-6 shadow-sm">
+            <div>
+              <div className="mb-2 flex items-center gap-2.5 text-[#111110]">
+                <FileText size={20} className="text-[#FB4D27]" />
+                <h1 className="text-[20px] font-bold tracking-[-0.02em]">
+                  {quotation.quotationTitle}
+                </h1>
+              </div>
+              <p className="text-[14px] font-medium text-[#4C433F]">
+                Req <span className="font-mono text-[#929090]">#{quotation.id}</span> · {quotation.department}
+              </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Department</p>
-                  <p className="text-base font-medium text-gray-900">
-                    {quotation.department}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Description</p>
-                  <p className="text-base font-medium text-gray-900">
-                    {quotation.description}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Number of Items</p>
-                  <p className="text-base font-medium text-gray-900">
-                    {quotation.items.length}
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Valid Until</p>
-                  <p className="text-base font-medium text-gray-900">
-                    {formatDate(quotation?.submissionDeadline)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Quotation Amount</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    ₹{getQuotationTotal(quotation.items)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600 mb-1">Status</p>
-                  <div className="flex items-center gap-3">
-                    <StatusIcon
-                      className={`w-6 h-6 ${statusConfig.iconColor}`}
-                    />
-                    <span
-                      className={`px-3 py-1 text-sm rounded-full ${statusConfig.color}`}
-                    >
-                      {statusConfig.label}
-                    </span>
-                  </div>
-                </div>
-              </div>
+            <div className="text-right">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Est. Budget Limit</p>
+              <p className="font-mono text-[24px] font-bold text-[#111110]">₹{totalEstBudget.toLocaleString('en-IN')}</p>
             </div>
           </div>
-        </div>
 
-        {/* Items Grid */}
-        {quotation.items && quotation.items.length > 0 && (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">
-              Items ({quotation.items.length})
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {quotation.items.map((item: QuotationItems, index: number) => (
-                <div
-                  key={item.id || index}
-                  className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex justify-between items-start mb-2">
-                    <span className="text-xs font-semibold text-gray-500">
-                      Item #{index + 1}
+          {/* ── Quotation Details ── */}
+          <div className="mb-8 overflow-hidden rounded-[14px] border border-black/[0.06] bg-white shadow-sm">
+            <div className="border-b border-black/[0.06] bg-[#FAFAFA] px-6 py-4">
+              <h3 className="text-[15px] font-bold text-[#111110]">Requested Items</h3>
+            </div>
+            <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2">
+              {quotation.items.map((item, i) => (
+                <div key={item.id} className="rounded-[10px] border border-black/5 bg-[#F9FAFB] p-4">
+                  <div className="mb-2 flex items-center justify-between">
+                    <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                      Item {String(i + 1).padStart(2, '0')}
                     </span>
-                    <span className="text-lg font-bold text-gray-900">
-                      ₹{item.amount || 0}
+                    <span className="font-mono text-[14px] font-bold text-[#111110]">
+                      ₹{Number(item.amount).toLocaleString('en-IN')}
                     </span>
                   </div>
-
-                  <h4 className="text-sm font-semibold text-gray-900 mb-2">
-                    {item.itemName || "N/A"}
-                  </h4>
-                  <h4 className="text-sm text-gray-600 mb-2">
-                    {item.itemDescription || "N/A"}
-                  </h4>
-
-                  <div className="space-y-1 text-sm text-gray-600">
-                    <p>
-                      Unit Price:{" "}
-                      <span className="font-medium">₹{item.amount || 0}</span>
-                    </p>
-                  </div>
+                  <h4 className="text-[14px] font-bold text-[#111110]">{item.itemName}</h4>
+                  <p className="mt-1 text-[12.5px] leading-relaxed text-[#4C433F]">{item.itemDescription}</p>
                 </div>
               ))}
             </div>
-
-            <div className="mt-6 pt-4 border-t border-gray-200 flex justify-end">
-              <div className="text-right">
-                <p className="text-sm text-gray-600">Total Amount</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  ₹
-                  {quotation.items.reduce(
-                    (sum: number, item: QuotationItems) =>
-                      sum + (item.amount || 0),
-                    0,
-                  )}
-                </p>
-              </div>
-            </div>
           </div>
-        )}
 
-        {/* Vendor Response Form */}
-        {!currentVendorSubmittedResponse ? (
-          <VendorResponseForm
-            quotationId={quotation!.id}
-            vendorId={currentVendorDetails.id}
-            quotationItems={quotation!.items}
-            setSubmittedResponse={setSubmittedResponse}
-          />
-        ) : (
-          ""
-        )}
-
-        {/* Display Submitted Response by vendors  */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 w-[80vw] mt-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
-            Vendor Responses ({vendorResponses.length})
-          </h3>
-
-          <div className="space-y-6">
-            {vendorResponses.map((response, responseIndex) => {
-              const totalAmount = response.responseItems.reduce(
-                (sum, item) => sum + item.unitPrice,
-                0,
-              );
-
-              return (
-                <div
-                  key={response.responseId}
-                  className="border border-gray-300 rounded-lg overflow-hidden"
-                >
-                  {/* Vendor Header */}
-                  <div className="bg-blue-50 p-4 border-b border-gray-300">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-semibold text-gray-900">
-                          Vendor ID: {response.vendorId}
-                        </h4>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-600">Total Quote</p>
-                        <p className="text-2xl font-bold text-green-600">
-                          ₹{totalAmount.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
+          {/* ── Conditional Rendering: Form OR Success Card ── */}
+          {existingResponse ? (
+            <div className="overflow-hidden rounded-[14px] border border-[#28CA41]/30 bg-white shadow-[0_8px_30px_rgba(40,202,65,0.08)] ring-1 ring-[#28CA41]/10">
+              <div className="flex items-center gap-3 border-b border-black/[0.04] bg-[#28CA41]/10 px-6 py-5">
+                <CheckCircle2 size={24} className="text-[#1a8c30]" />
+                <div>
+                  <h3 className="text-[16px] font-bold text-[#1a8c30]">Quotation Submitted Successfully</h3>
+                  <p className="text-[13px] font-medium text-[#1a8c30]/80">You have already responded to this request.</p>
+                </div>
+              </div>
+              
+              <div className="p-6">
+                <div className="mb-6 flex flex-wrap gap-6 rounded-[10px] border border-black/5 bg-[#FAFAFA] p-5">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Your Total Bid</p>
+                    <p className="font-mono text-[24px] font-bold text-[#111110]">
+                      ₹{existingResponse.response_items.reduce((sum: number, item: any) => sum + Number(item.unit_price), 0).toLocaleString('en-IN')}
+                    </p>
                   </div>
-
-                  {/* Items Grid */}
-                  <div className="p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {response.responseItems.map((item, itemIndex) => (
-                        <div
-                          key={item.itemId}
-                          className="bg-gray-50 rounded-lg p-4 border border-gray-200"
-                        >
-                          <div className="flex justify-between items-start mb-3">
-                            <span className="text-xs font-semibold text-gray-500">
-                              Item #{itemIndex + 1}
-                            </span>
-                            <span className="text-lg font-bold text-gray-900">
-                              ₹{item.unitPrice.toLocaleString()}
-                            </span>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div>
-                              <p className="text-xs text-gray-600">
-                                Brand/Model
-                              </p>
-                              <p className="text-sm font-semibold text-blue-600">
-                                {item.brandModel}
-                              </p>
-                            </div>
-
-                            <div>
-                              <p className="text-xs text-gray-600">
-                                Delivery Period
-                              </p>
-                              <p className="text-sm font-medium text-gray-900">
-                                {item.deliveryPeriod}
-                              </p>
-                            </div>
-
-                            {item.description && (
-                              <div>
-                                <p className="text-xs text-gray-600">
-                                  Description
-                                </p>
-                                <p className="text-xs text-gray-700 line-clamp-3">
-                                  {item.description}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Current Status</p>
+                    <div className="mt-1 inline-flex items-center gap-1.5 rounded-full border border-[#FFBD2E]/25 bg-[#FFBD2E]/15 px-3 py-1.5 text-[11px] font-bold uppercase tracking-[0.04em] text-[#9a6e00]">
+                      <Clock size={14} /> {existingResponse.status?.replace('_', ' ') || "PENDING REVIEW"}
                     </div>
                   </div>
                 </div>
-              );
-            })}
-          </div>
+
+                <h4 className="mb-3 text-[14px] font-bold text-[#111110]">Your Submitted Items</h4>
+                <div className="flex flex-col gap-3">
+                  {existingResponse.response_items.map((item: any, i: number) => (
+                    <div key={item.id || i} className="flex flex-col justify-between rounded-[8px] border border-black/5 p-4 sm:flex-row sm:items-center">
+                      <div>
+                        <p className="text-[14px] font-bold text-[#111110]">{item.brand_model}</p>
+                        <p className="mt-0.5 flex items-center gap-1.5 text-[12px] text-[#929090]">
+                          <Package size={12} /> {item.delivery_period}
+                        </p>
+                      </div>
+                      <span className="mt-2 font-mono text-[15px] font-bold text-[#111110] sm:mt-0">
+                        ₹{Number(item.unit_price).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <VendorResponseForm 
+              quotationId={quotation.id as string} 
+              vendorId={vendorProfile?.id || 0} // Pass parsed vendor ID
+              quotationItems={quotation.items}
+              setSubmittedResponse={(res) => setExistingResponse({
+                ...res,
+                response_items: res.responseItems.map(i => ({
+                  brand_model: i.brandModel,
+                  unit_price: i.unitPrice,
+                  delivery_period: i.deliveryPeriod
+                }))
+              })}
+            />
+          )}
+
         </div>
-      </div>
+      </main>
     </div>
   );
 }

@@ -23,13 +23,23 @@ export interface QuotationRequest {
   approved_amount?: number;
 }
 
-export interface VendorResponse {
-  vendor_id: string;
-  quotation_id: string;
-  vendor_name: string;
+export interface ResponseItem {
+  id: number;
+  item: number;
+  brand_model: string;
+  delivery_period: string;
+  unit_price: number;
   description: string;
-  amount: number;
-  submitted_date: string;
+}
+
+export interface VendorResponse {
+  id: number;
+  quotation: number;
+  vendor: number;
+  response_items: ResponseItem[];
+  vendor_name?: string;
+  quotation_title?: string;
+  status?: "PENDING_REVIEW" | "ACCEPTED" | "REJECTED" | "DELIVERED";
 }
 
 export interface Transaction {
@@ -73,7 +83,6 @@ export interface Quotation {
   qtReqVerifiedAccountant: boolean | false;
   finalQtVerifiedAccountant: boolean | false;
   qtVerifiedPrincipal: boolean | false;
-  otpVerified: boolean | false; 
 }
 
 //Vendors
@@ -115,4 +124,13 @@ export interface userProfile {
   email: string;
   phone: number;
   role: string;
+}
+
+
+export interface MenuItem {
+  id: number;
+  icon: string;
+  label: string;
+  href: string;
+  badge?: number;
 }

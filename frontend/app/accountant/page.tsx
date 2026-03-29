@@ -1,53 +1,65 @@
-// app/accountant/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import axios from "axios";
-import { RefreshCw, Send, CheckCircle, XCircle } from "lucide-react";
+import Cookies from "js-cookie";
+import { 
+  Send, 
+  CheckCircle2, 
+  Clock, 
+  ShieldCheck, 
+  ArrowRight,
+  Eye,
+  FileText
+} from "lucide-react";
 import { BACKEND_URL } from "../utility";
 import { Quotation } from "../utility/index";
 
-export default function Page() {
+export default function AccountantDashboard() {
+  const router = useRouter();
   const [incoming, setIncoming] = useState<Quotation[]>([]);
   const [finalQueue, setFinalQueue] = useState<Quotation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
+    // 1. Fetch User Profile
+    try {
+      const cookieData = Cookies.get("userProfile");
+      if (cookieData) {
+        setUserProfile(JSON.parse(decodeURIComponent(cookieData)));
+      }
+    } catch (e) {
+      console.error("Failed to parse user profile cookie", e);
+    }
+
+    // 2. Fetch Data
     const fetchAll = async () => {
       setLoading(true);
       try {
-        const { data } = await axios.get(`${BACKEND_URL}/qt/`, {
-          headers: { "Content-Type": "application/json" },
-        });
+        const { data } = await axios.get(`${BACKEND_URL}/qt/`);
         const mapped: Quotation[] = data.map((d: any) => ({
-          id: d.id,
-          category: d.category,
+          ...d,
           quotationTitle: d.title,
-          description: d.description,
-          department: d.department,
           submissionDeadline: d.submission_deadline,
           deliveryPeriod: d.delivery_period,
-          status: d.status,
           qtReqVerifiedAccountant: d.qt_req_verified_accountant,
           finalQtVerifiedAccountant: d.final_qt_verified_accountant,
           qtVerifiedPrincipal: d.qt_verified_principal,
-          items: d.items.map((item: any) => ({
-            id: item.id,
-            itemName: item.name,
-            itemDescription: item.description,
-            amount: item.amount,
-          })),
         }));
 
-        setIncoming(mapped.filter((q) => !q.qtReqVerifiedAccountant));
+        // Queue 1: Needs to be forwarded to vendors
+        setIncoming(mapped.filter((q) => !q.qtReqVerifiedAccountant && q.status !== "REJECTED"));
+        
+        // Queue 2: HOD Approved a vendor, needs Principal forwarding
         setFinalQueue(
           mapped.filter(
             (q) =>
               q.qtReqVerifiedAccountant &&
               !q.finalQtVerifiedAccountant &&
-              q.status != "REJECTED" &&
-              q.otpVerified,
-          ),
+              q.status === "APPROVED" // HOD has approved it
+          )
         );
       } catch {
         console.error("Failed to fetch quotations");
@@ -58,319 +70,140 @@ export default function Page() {
     fetchAll();
   }, []);
 
-  const forwardToVendors = async (id: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_URL}/qt/${id}`,
-        { qt_req_verified_accountant: true },
-        { headers: { "Content-Type": "application/json" } },
-      );
-      setIncoming((prev) =>
-        prev.filter((q) => q.id !== id && q.status != "REJECTED"),
-      );
-    } catch {
-      console.error("Failed to forward");
-    }
-  };
-  const rejectQuotationByAccountant = async (id: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_URL}/qt/${id}`,
-        { status: "REJECTED" },
-        { headers: { "Content-Type": "application/json" } },
-      );
-      setIncoming((prev) =>
-        prev.filter((q) => q.id !== id && q.status != "REJECTED"),
-      );
-    } catch {
-      console.error("REJECTED the response by the accountant");
-    }
-  };
-
-  const sendToPrincipal = async (id: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_URL}/qt/${id}`,
-        { final_qt_verified_accountant: true },
-        { headers: { "Content-Type": "application/json" } },
-      );
-      setFinalQueue((prev) =>
-        prev.filter(
-          (q) => q.id !== id && q.otpVerified && q.status != "REJECTED",
-        ),
-      );
-    } catch {
-      console.error("Failed to send to principal");
-    }
-  };
-  const rejectQuotationByPrincipal = async (id: string) => {
-    try {
-      await axios.patch(
-        `${BACKEND_URL}/qt/${id}`,
-        { status: "REJECTED" },
-        { headers: { "Content-Type": "application/json" } },
-      );
-      setFinalQueue((prev) =>
-        prev.filter(
-          (q) => q.id !== id && q.otpVerified && q.status != "REJECTED",
-        ),
-      );
-    } catch {
-      console.error("Rejected the request by principal");
-    }
-  };
-
-  const statusBadge = (q: Quotation) => {
-    if (q.qtVerifiedPrincipal)
-      return (
-        <span className="text-xs px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium">
-          Principal approved
-        </span>
-      );
-    if (q.finalQtVerifiedAccountant)
-      return (
-        <span className="text-xs px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
-          Sent to principal
-        </span>
-      );
-    if (q.qtReqVerifiedAccountant)
-      return (
-        <span className="text-xs px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
-          Forwarded to vendors
-        </span>
-      );
-    return (
-      <span className="text-xs px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium">
-        Pending review
-      </span>
-    );
-  };
-
   const metrics = [
-    { label: "Pending review", value: incoming.length, sub: "from HOD" },
-    {
-      label: "Forwarded to vendors",
-      value: finalQueue.length,
-      sub: "awaiting responses",
-      color: "text-blue-600",
-    },
-    {
-      label: "Final verification",
-      value: finalQueue.length,
-      sub: "ready for principal",
-      color: "text-green-600",
-    },
+    { label: "Pending Review", value: incoming.length, sub: "Requests from HOD", color: "#FFBD2E", bg: "bg-[#FFBD2E]/15", icon: <Clock size={16} className="text-[#9a6e00]" /> },
+    { label: "Forwarded to Vendors", value: finalQueue.length, sub: "Awaiting final review", color: "#5B7FA6", bg: "bg-[#5B7FA6]/10", icon: <Send size={16} className="text-[#5B7FA6]" /> },
+    { label: "Ready for Principal", value: finalQueue.length, sub: "Final verification queue", color: "#28CA41", bg: "bg-[#28CA41]/10", icon: <ShieldCheck size={16} className="text-[#28CA41]" /> },
   ];
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Top bar */}
-        <div className="bg-white rounded-lg shadow-lg px-6 py-4 flex items-center justify-between mb-6">
+    <div className="min-h-screen bg-[#F2F2F2] font-sans text-[#111110]">
+      <div className="mx-auto max-w-[1400px] px-[clamp(16px,4vw,32px)] py-[clamp(24px,4vw,40px)]">
+        
+        {/* ── Top Header ── */}
+        <div className="mb-8 flex items-center justify-between rounded-[14px] border border-black/[0.06] bg-white p-6 shadow-sm">
           <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-semibold text-gray-800">
-                Accountant workspace
+            <div className="mb-1 flex items-center gap-3">
+              <h1 className="text-[22px] font-bold tracking-[-0.03em] text-[#111110]">
+                Accountant Workspace
               </h1>
-              <span className="text-xs px-2.5 py-1 rounded-full bg-yellow-100 text-yellow-700 font-medium">
-                Accountant
+              <span className="rounded-full bg-[#111110] px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.06em] text-white">
+                {userProfile?.role || "ACCOUNTANT"}
               </span>
             </div>
-            <p className="text-gray-500 text-sm mt-0.5">
-              Manage incoming quotation requests and final verifications
+            <p className="text-[13.5px] text-[#929090]">
+              Verify incoming requests and execute final compliance checks.
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">User</span>
-            <div className="w-9 h-9 rounded-full bg-yellow-100 flex items-center justify-center text-sm font-medium text-yellow-700">
-              1
+            <div className="text-right">
+              <p className="text-[13px] font-bold text-[#111110] capitalize">{userProfile?.name || "Accountant User"}</p>
+              <p className="font-mono text-[11px] text-[#929090]">{userProfile?.email || "ACCT-001"}</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-[#111110] to-[#4C433F] text-[14px] font-bold uppercase text-white shadow-sm">
+              {userProfile?.name ? userProfile.name.charAt(0) : "A"}
             </div>
           </div>
         </div>
 
-        {/* Metrics */}
-        <div className="grid grid-cols-3 gap-4 mb-6">
+        {/* ── Metrics ── */}
+        <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
           {metrics.map((m) => (
-            <div
-              key={m.label}
-              className="bg-white rounded-lg shadow-lg px-5 py-4"
-            >
-              <p className="text-gray-500 text-xs mb-1">{m.label}</p>
-              <p
-                className={`text-3xl font-light ${m.color ?? "text-gray-800"}`}
-              >
-                {m.value}
-              </p>
-              <p className="text-gray-400 text-xs mt-1">{m.sub}</p>
+            <div key={m.label} className="rounded-[14px] border border-black/[0.06] bg-white p-5 shadow-sm">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">{m.label}</span>
+                <div className={`flex h-[32px] w-[32px] items-center justify-center rounded-lg ${m.bg}`}>{m.icon}</div>
+              </div>
+              <p className="font-mono text-[32px] font-bold tracking-tight text-[#111110]">{m.value}</p>
+              <p className="mt-0.5 text-[12px] text-[#929090]">{m.sub}</p>
             </div>
           ))}
         </div>
 
         {loading ? (
-          <div className="flex justify-center py-16">
-            <RefreshCw className="w-5 h-5 text-gray-400 animate-spin" />
+          <div className="flex flex-col items-center justify-center py-20 text-[#929090]">
+            <div className="mb-4 h-8 w-8 animate-spin rounded-full border-[3px] border-[#111110] border-r-transparent" />
+            <p className="text-[13px] font-medium">Syncing accounting records...</p>
           </div>
         ) : (
-          <>
-            {/* Section 1 — Incoming from HOD */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center text-xs font-medium text-yellow-700">
-                  1
-                </div>
+          <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+            
+            {/* COLUMN 1: Incoming from HOD */}
+            <div className="overflow-hidden rounded-[14px] border border-black/[0.06] bg-white shadow-sm">
+              <div className="flex items-center gap-3 border-b border-black/[0.06] bg-[#FAFAFA] px-6 py-4">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#FFBD2E]/20 text-[13px] font-bold text-[#9a6e00]">1</div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    Incoming quotation requests
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Verify HOD requests and forward to vendors
-                  </p>
+                  <h3 className="text-[15px] font-bold text-[#111110]">Incoming Requests</h3>
+                  <p className="text-[12px] text-[#929090]">Verify requirements and forward to vendors.</p>
                 </div>
               </div>
 
-              <div className="px-6 py-5 space-y-3">
+              <div className="flex flex-col gap-4 bg-white p-5">
                 {incoming.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                      <CheckCircle className="w-4 h-4 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 text-sm">All caught up.</p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      No pending requests from HOD.
-                    </p>
+                  <div className="py-12 text-center">
+                    <CheckCircle2 size={28} className="mx-auto mb-3 text-[#D3D6DA]" />
+                    <p className="text-[14px] font-bold text-[#111110]">All caught up.</p>
                   </div>
                 ) : (
                   incoming.map((q) => (
-                    <div
-                      key={q.id}
-                      className="border border-gray-200 rounded-lg p-4 bg-slate-50 hover:border-yellow-300 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            {q.quotationTitle}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {q.department} · {q.category} · Deadline:{" "}
-                            {q.submissionDeadline?.slice(0, 10)}
-                          </p>
-                        </div>
-                        {statusBadge(q)}
+                    <div key={q.id} className="rounded-[12px] border border-black/10 bg-[#FAFAFA] p-5 transition-colors hover:border-[#FFBD2E]/50 hover:bg-white">
+                      <div className="mb-4">
+                        <h4 className="text-[15px] font-bold text-[#111110]">{q.quotationTitle || q.title}</h4>
+                        <p className="mt-1 text-[12px] text-[#929090]">Req <span className="font-mono">#{q.id}</span> · {q.department}</p>
                       </div>
-
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {q.items.map((item) => (
-                          <span
-                            key={item.id}
-                            className="text-xs bg-white border border-gray-200 rounded-md px-2 py-1 text-gray-600"
-                          >
-                            {item.itemName} : ₹{item.amount}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
-                        <button
-                          onClick={() => forwardToVendors(q.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-blue-200 text-blue-600 rounded-lg hover:bg-blue-50 transition-colors"
-                        >
-                          <Send className="w-3 h-3" />
-                          Forward to vendors
-                        </button>
-                        <button
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                          onClick={() => rejectQuotationByAccountant(q.id)}
-                        >
-                          <XCircle className="w-3 h-3" />
-                          Reject
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => router.push(`/accountant/qt/${q.id}`)}
+                        className="flex w-full items-center justify-between rounded-[8px] bg-white px-4 py-3 border border-black/5 text-[13px] font-semibold text-[#111110] transition-colors hover:border-[#111110]"
+                      >
+                        <span className="flex items-center gap-2"><Eye size={15} /> Review & Forward to Vendors</span>
+                        <ArrowRight size={15} className="text-[#929090]" />
+                      </button>
                     </div>
                   ))
                 )}
               </div>
             </div>
 
-            {/* Section 2 — Final verification */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200 flex items-center gap-3">
-                <div className="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center text-xs font-medium text-green-700">
-                  2
-                </div>
+            {/* COLUMN 2: Final Verification */}
+            <div className="overflow-hidden rounded-[14px] border border-black/[0.06] bg-white shadow-sm">
+              <div className="flex items-center gap-3 border-b border-black/[0.06] bg-[#FAFAFA] px-6 py-4">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-[#28CA41]/20 text-[13px] font-bold text-[#1a8c30]">2</div>
                 <div>
-                  <p className="text-sm font-medium text-gray-800">
-                    Final verification queue
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    HOD-selected responses — verify and forward to principal
-                  </p>
+                  <h3 className="text-[15px] font-bold text-[#111110]">Final Verification Queue</h3>
+                  <p className="text-[12px] text-[#929090]">HOD-approved vendor quotes for Principal.</p>
                 </div>
               </div>
 
-              <div className="px-6 py-5 space-y-3">
+              <div className="flex flex-col gap-4 bg-white p-5">
                 {finalQueue.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-center">
-                    <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center mb-2">
-                      <Send className="w-4 h-4 text-gray-400" />
-                    </div>
-                    <p className="text-gray-500 text-sm">
-                      Nothing to verify yet.
-                    </p>
-                    <p className="text-gray-400 text-xs mt-1">
-                      Items selected by HOD will appear here.
-                    </p>
+                  <div className="py-12 text-center">
+                    <ShieldCheck size={28} className="mx-auto mb-3 text-[#D3D6DA]" />
+                    <p className="text-[14px] font-bold text-[#111110]">Nothing to verify yet.</p>
                   </div>
                 ) : (
                   finalQueue.map((q) => (
-                    <div
-                      key={q.id}
-                      className="border border-gray-200 rounded-lg p-4 bg-slate-50 hover:border-green-300 transition-colors"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-gray-800">
-                            {q.quotationTitle}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-0.5">
-                            {q.department} · HOD selected · Quotation #{q.id}
-                          </p>
-                        </div>
-                        {statusBadge(q)}
+                    <div key={q.id} className="rounded-[12px] border border-black/10 bg-[#FAFAFA] p-5 transition-colors hover:border-[#28CA41]/50 hover:bg-white">
+                      <div className="mb-4">
+                        <h4 className="text-[15px] font-bold text-[#111110]">{q.quotationTitle || q.title}</h4>
+                        <p className="mt-1 flex items-center gap-2 text-[12px] text-[#929090]">
+                          Req <span className="font-mono">#{q.id}</span> · {q.department}
+                          <span className="rounded bg-[#FB4D27]/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#FB4D27]">HOD Approved</span>
+                        </p>
                       </div>
-
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {q.items.map((item) => (
-                          <span
-                            key={item.id}
-                            className="text-xs bg-white border border-gray-200 rounded-md px-2 py-1 text-gray-600"
-                          >
-                            {item.itemName} × {item.amount}
-                          </span>
-                        ))}
-                      </div>
-
-                      <div className="flex gap-2 mt-3 pt-3 border-t border-gray-200">
-                        <button
-                          onClick={() => sendToPrincipal(q.id)}
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-green-200 text-green-600 rounded-lg hover:bg-green-50 transition-colors"
-                        >
-                          <CheckCircle className="w-3 h-3" />
-                          Send to principal
-                        </button>
-                        <button
-                          className="flex items-center gap-1.5 px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                          onClick={() => rejectQuotationByPrincipal(q.id)}
-                        >
-                          <XCircle className="w-3 h-3" />
-                          Reject
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => router.push(`/accountant/verify/${q.id}`)}
+                        className="flex w-full items-center justify-between rounded-[8px] bg-white px-4 py-3 border border-black/5 text-[13px] font-semibold text-[#111110] transition-colors hover:border-[#28CA41]"
+                      >
+                        <span className="flex items-center gap-2"><ShieldCheck size={15} /> Review Compliance & Forward</span>
+                        <ArrowRight size={15} className="text-[#929090]" />
+                      </button>
                     </div>
                   ))
                 )}
               </div>
             </div>
-          </>
+
+          </div>
         )}
       </div>
     </div>
