@@ -105,7 +105,6 @@ class QuotationWithItemSerializer(serializers.ModelSerializer):
       "qt_req_verified_accountant",
       "final_qt_verified_accountant"   ,
       "qt_verified_principal",
-      "otp_verified",
       "items"
     ]
 

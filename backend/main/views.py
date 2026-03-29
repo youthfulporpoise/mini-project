@@ -244,6 +244,46 @@ class QuotationResponseList(generics.ListCreateAPIView):
         "status": status.HTTP_400_BAD_REQUEST,
       })
 
+
+class QuotationAcceptedResponseList(views.APIView):
+  permission_classes = [permissions.IsAuthenticated]
+
+  def get(self , request):
+    verified_quotation = Quotation.objects.filter(qt_req_verified_accountant = True)
+    result = [] 
+
+    for quotation in verified_quotation: 
+      responses = QuotationResponse.objects.filter(quotation = quotation)
+      result.append({
+        "quotation_id":    quotation.id,
+        "quotation_title": quotation.title,
+        "department":      quotation.department,
+        "category":        quotation.category,
+        "status":          quotation.status,
+        "responses": [
+          {
+            "response_id": r.id,
+            "vendor_id":   r.vendor.id,
+            "vendor_name":  r.vendor.get_full_name() or r.vendor.username,
+            "vendor_email":r.vendor.email,
+            "response_items": [
+              {
+                  "id":              ri.id,
+                  "item_id":         ri.item.id,
+                  "item_name":       ri.item.name,
+                  "brand_model":     ri.brand_model,
+                  "unit_price":      ri.unit_price,
+                  "delivery_period": str(ri.delivery_period),
+                  "description":     ri.description,
+              }
+              for ri in r.response_items.all()
+            ],
+          }
+          for r in responses
+        ],
+      })
+    return Response(result)
+
 class QuotationResponseDetail(generics.RetrieveUpdateDestroyAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = QuotationResponse.objects.all()
@@ -259,7 +299,10 @@ class QuotationAcceptedList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = QuotationAccepted.objects.all()
   serializer_class = QuotationAcceptedSerializer
-
+  def perform_create(self, serializer):
+    accepted = serializer.save() 
+    accepted.quotation.status = Quotation.Status.APPROVED
+    accepted.quotation.save()
 
 class ItemList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
@@ -277,6 +320,9 @@ class QuotationWithItemList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = Quotation.objects.all()
   serializer_class = QuotationWithItemSerializer
+
+  def perform_create(self, serializer):
+    serializer.save(created_by=self.request.user)
 
 
 class QuotationWithItemDetail(generics.RetrieveUpdateDestroyAPIView):

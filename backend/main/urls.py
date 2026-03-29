@@ -28,7 +28,8 @@ urlpatterns = [
   path("quotations/accepted/", views.QuotationAcceptedList.as_view()),
   path("qt/", views.QuotationWithItemList.as_view()),
   path("qt/<int:pk>", views.QuotationWithItemDetail.as_view()),
-
+  path("accepted-quotations/", views.QuotationAcceptedResponseList.as_view()), 
+  
   path("responses/", views.QuotationResponseList.as_view()),
   path("responses/<int:pk>", views.QuotationResponseDetail.as_view()),
 
