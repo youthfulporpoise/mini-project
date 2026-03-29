@@ -12,6 +12,7 @@ import {
   Truck,
   ArrowRight,
   FileText,
+  CheckCheck,
 } from "lucide-react";
 import { BACKEND_URL } from "@/app/utility";
 import { fetchQuotations, fetchResponses } from "@/app/utility/api";
@@ -89,7 +90,6 @@ export default function VendorResponsesPage() {
               ) || 0;
 
             // --- DETERMINE TRUE STATUS ---
-            // Check if this specific quotation has an accepted record in the DB
             const acceptedRecord = acceptedData.find(
               (acc: any) => String(acc.quotation) === String(res.quotation),
             );
@@ -98,8 +98,12 @@ export default function VendorResponsesPage() {
 
             if (acceptedRecord) {
               if (String(acceptedRecord.response) === String(res.id)) {
-                // The accepted response ID matches THIS vendor's response ID
-                calculatedStatus = "ACCEPTED";
+                // Check if the overall quotation lifecycle is marked as DELIVERED
+                if (relatedQuotation?.status === "DELIVERED") {
+                  calculatedStatus = "DELIVERED";
+                } else {
+                  calculatedStatus = "ACCEPTED";
+                }
               } else {
                 // The quotation is closed, and someone else won
                 calculatedStatus = "REJECTED";
@@ -119,14 +123,15 @@ export default function VendorResponsesPage() {
           },
         );
 
-        // 5. Sort: ACCEPTED first, then PENDING, then REJECTED
+        // 5. Sort: DELIVERED and ACCEPTED first, then PENDING, then REJECTED
         enrichedData.sort((a, b) => {
           const order: Record<string, number> = {
-            ACCEPTED: 1,
-            PENDING_REVIEW: 2,
-            REJECTED: 3,
+            DELIVERED: 1,
+            ACCEPTED: 2,
+            PENDING_REVIEW: 3,
+            REJECTED: 4,
           };
-          return (order[a.status] || 4) - (order[b.status] || 4);
+          return (order[a.status] || 5) - (order[b.status] || 5);
         });
 
         setMyResponses(enrichedData);
@@ -143,6 +148,12 @@ export default function VendorResponsesPage() {
   // Helper to render the appropriate status badge
   const renderStatusBadge = (status: string) => {
     switch (status) {
+      case "DELIVERED":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#5B7FA6]/20 bg-[#5B7FA6]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#5B7FA6]">
+            <CheckCheck size={12} /> Delivered
+          </span>
+        );
       case "ACCEPTED":
         return (
           <span className="inline-flex items-center gap-1 rounded-full border border-[#28CA41]/20 bg-[#28CA41]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1a8c30]">
@@ -165,11 +176,12 @@ export default function VendorResponsesPage() {
   };
 
   // Metrics calculation
-  const approvedCount = myResponses.filter(
-    (r) => r.status === "ACCEPTED",
+  const approvedOrDeliveredCount = myResponses.filter(
+    (r) => r.status === "ACCEPTED" || r.status === "DELIVERED",
   ).length;
+  
   const pendingCount = myResponses.filter(
-    (r) => r.status !== "ACCEPTED" && r.status !== "REJECTED",
+    (r) => r.status !== "ACCEPTED" && r.status !== "DELIVERED" && r.status !== "REJECTED",
   ).length;
 
   return (
@@ -188,8 +200,7 @@ export default function VendorResponsesPage() {
                 </span>
               </div>
               <p className="text-[13.5px] text-[#929090]">
-                Track the status of your submitted bids and process approved
-                deliveries.
+                Track the status of your submitted bids and process approved deliveries.
               </p>
             </div>
             <div className="text-right">
@@ -214,10 +225,10 @@ export default function VendorResponsesPage() {
             </div>
             <div className="rounded-[14px] border border-[#28CA41]/30 bg-white p-5 shadow-sm">
               <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
-                Approved / Won
+                Approved / Delivered
               </p>
               <p className="mt-1 font-mono text-[32px] font-bold tracking-tight text-[#1a8c30]">
-                {approvedCount}
+                {approvedOrDeliveredCount}
               </p>
             </div>
             <div className="rounded-[14px] border border-[#FFBD2E]/30 bg-white p-5 shadow-sm">
@@ -253,6 +264,7 @@ export default function VendorResponsesPage() {
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {myResponses.map((res) => {
+                const isDelivered = res.status === "DELIVERED";
                 const isApproved = res.status === "ACCEPTED";
                 const isRejected = res.status === "REJECTED";
 
@@ -260,11 +272,13 @@ export default function VendorResponsesPage() {
                   <div
                     key={res.id}
                     className={`flex flex-col overflow-hidden rounded-[14px] border transition-all ${
-                      isApproved
-                        ? "border-[#28CA41]/40 bg-white shadow-[0_8px_24px_rgba(40,202,65,0.08)] ring-1 ring-[#28CA41]/10"
-                        : isRejected
-                          ? "border-black/[0.06] bg-[#FAFAFA] opacity-75"
-                          : "border-black/[0.08] bg-white shadow-sm hover:shadow-md hover:border-black/15"
+                      isDelivered
+                        ? "border-[#5B7FA6]/30 bg-[#5B7FA6]/[0.02]"
+                        : isApproved
+                          ? "border-[#28CA41]/40 bg-white shadow-[0_8px_24px_rgba(40,202,65,0.08)] ring-1 ring-[#28CA41]/10"
+                          : isRejected
+                            ? "border-black/[0.06] bg-[#FAFAFA] opacity-75"
+                            : "border-black/[0.08] bg-white shadow-sm hover:border-black/15 hover:shadow-md"
                     }`}
                   >
                     <div className="flex items-start justify-between border-b border-black/[0.04] p-5 pb-4">
@@ -279,7 +293,9 @@ export default function VendorResponsesPage() {
                           Your Bid
                         </p>
                         <p
-                          className={`font-mono text-[18px] font-bold ${isApproved ? "text-[#1a8c30]" : "text-[#111110]"}`}
+                          className={`font-mono text-[18px] font-bold ${
+                            isApproved || isDelivered ? "text-[#1a8c30]" : "text-[#111110]"
+                          }`}
                         >
                           ₹{res.totalAmount.toLocaleString("en-IN")}
                         </p>
@@ -287,7 +303,7 @@ export default function VendorResponsesPage() {
                     </div>
 
                     <div className="flex flex-1 flex-col p-5">
-                      <h3 className="mb-1 text-[16px] font-bold leading-snug text-[#111110] line-clamp-2">
+                      <h3 className="mb-1 line-clamp-2 text-[16px] font-bold leading-snug text-[#111110]">
                         {res.quotationTitle}
                       </h3>
                       <p className="mb-5 text-[13px] text-[#929090]">
@@ -295,7 +311,11 @@ export default function VendorResponsesPage() {
                       </p>
 
                       <div className="mt-auto">
-                        {isApproved ? (
+                        {isDelivered ? (
+                          <div className="flex w-full items-center justify-center gap-2 rounded-[9px] bg-[#28CA41]/10 px-4 py-3 text-[13.5px] font-bold text-[#1a8c30]">
+                            <CheckCheck size={16} /> Delivery Successfully Verified
+                          </div>
+                        ) : isApproved ? (
                           <button
                             onClick={() =>
                               router.push(`/vendor/delivery/${res.quotation}`)
@@ -317,7 +337,7 @@ export default function VendorResponsesPage() {
                         ) : (
                           <button
                             onClick={() =>
-                              router.push(`/vendor/qt/${res.quotation}`)
+                              router.push(`/vendor/quotations/${res.quotation}`)
                             }
                             className="flex w-full items-center justify-between rounded-[9px] border-[1.5px] border-black/10 bg-white px-4 py-3 text-[13.5px] font-semibold text-[#111110] transition-colors hover:bg-[#F2F2F2]"
                           >

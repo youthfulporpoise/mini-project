@@ -4,11 +4,17 @@ import { MenuItem } from "@/app/utility/index";
 import React from "react";
 
 const menuItems: MenuItem[] = [
-  { id: 1, icon: "Home", label: "Dashboard", href: "/overview" },
- 
+  { id: 1, icon: "LayoutDashboard", label: "Dashboard", href: "/overview" },
+  { id: 2, icon: "UserCog", label: "HOD", href: "/hod" },
+  { id: 3, icon: "Calculator", label: "Accountant", href: "/accountant" },
+  { id: 4, icon: "Building2", label: "Principal", href: "/principal" },
 ];
 
-export default function PrincipalLayout({ children }: { children: React.ReactNode }) {
+export default function PrincipalLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#F2F2F2" }}>
       <Sidebar menuItems={menuItems} />

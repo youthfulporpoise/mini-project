@@ -2,10 +2,10 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { redirect, RedirectType, usePathname } from "next/navigation";
 import Cookies from "js-cookie";
 import { LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import * as LucideIcons from "lucide-react"; 
+import * as LucideIcons from "lucide-react";
 import { menuItem } from "../utility/index";
 import { performLogout } from "../utility/api";
 import { useRouter } from "next/navigation";
@@ -28,30 +28,29 @@ export function Sidebar({ menuItems }: SidebarProps) {
       console.error("Failed to parse user profile cookie in Sidebar", e);
     }
   }, []);
-  
+
   // Helper to get initials
   const getInitials = (name: string) => {
     if (!name) return "U";
     return name.charAt(0).toUpperCase();
   };
-  
-  const router = useRouter();
+
   const handleLogout = async () => {
-     const result = await performLogout();
- 
-     if (result.success) {
-       console.log("Successful Logout");
-     } else {
-       console.error("Logout failed on backend, forcing local logout.");
-     }
- 
-     // Always redirect to login, even if the backend call fails
-     router.push("/login");
-   };
+    const result = await performLogout();
+
+    if (result.success) {
+      console.log("Successful Logout");
+    } else {
+      console.error("Logout failed on backend, forcing local logout.");
+    }
+
+    // Always redirect to login, even if the backend call fails
+    redirect("/auth", RedirectType.replace);
+  };
 
   const isActive = (href: string) =>
     href === "/hod" ? pathname === href : pathname.startsWith(href);
-  
+
   return (
     <aside
       className={`fixed bottom-0 left-0 top-0 z-50 flex flex-col border-r border-white/5 bg-[#111110] font-sans transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -186,25 +185,23 @@ export function Sidebar({ menuItems }: SidebarProps) {
 
         {!collapsed && <div className="my-2 h-px bg-white/5" />}
 
-        
-          <button
+        <button
           onClick={handleLogout}
-            className={`group relative flex w-full items-center rounded-[10px] text-[13px] font-medium text-white/30 transition-colors hover:bg-[#FB4D27]/10 hover:text-[#FB4D27] ${
-              collapsed ? "mt-2 justify-center p-2" : "gap-2.5 p-2"
-            }`}
-          >
-            <LogOut className="h-[15px] w-[15px] shrink-0" />
+          className={`group relative flex w-full items-center rounded-[10px] text-[13px] font-medium text-white/30 transition-colors hover:bg-[#FB4D27]/10 hover:text-[#FB4D27] ${
+            collapsed ? "mt-2 justify-center p-2" : "gap-2.5 p-2"
+          }`}
+        >
+          <LogOut className="h-[15px] w-[15px] shrink-0" />
 
-            {!collapsed && <span>Sign out</span>}
+          {!collapsed && <span>Sign out</span>}
 
-            {/* Tooltip for collapsed state */}
-            {collapsed && (
-              <span className="absolute left-[calc(100%+12px)] top-1/2 z-[100] hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-[#2a2826] px-2.5 py-1.5 text-xs font-medium text-white shadow-[0_4px_16px_rgba(0,0,0,0.4)] group-hover:block">
-                Sign out
-              </span>
-            )}
-          </button>
-      
+          {/* Tooltip for collapsed state */}
+          {collapsed && (
+            <span className="absolute left-[calc(100%+12px)] top-1/2 z-[100] hidden -translate-y-1/2 whitespace-nowrap rounded-md bg-[#2a2826] px-2.5 py-1.5 text-xs font-medium text-white shadow-[0_4px_16px_rgba(0,0,0,0.4)] group-hover:block">
+              Sign out
+            </span>
+          )}
+        </button>
       </div>
     </aside>
   );

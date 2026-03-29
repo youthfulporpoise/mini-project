@@ -60,7 +60,8 @@ export default function VendorDashboard() {
         const updatedData = backendData.filter(
           (q) => q.status !== "REJECTED" && q.qtReqVerifiedAccountant
         );
-        setData(updatedData);
+        const data = updatedData.sort((a,b) => b.id - a.id )
+        setData(data);
       } catch (err) {
         console.error("Error fetching quotations", err);
       } finally {
@@ -173,7 +174,7 @@ export default function VendorDashboard() {
                       </div>
                       
                       <button
-                        onClick={() => router.push(`/vendor/quotations/${quotation.id}`)}
+                        onClick={() => router.push(`/vendor/quotation/${quotation.id}`)}
                         className="inline-flex shrink-0 items-center gap-2 rounded-[9px] bg-[#111110] px-5 py-2.5 text-[13px] font-semibold text-white transition-all hover:-translate-y-[1px] hover:bg-[#FB4D27] hover:shadow-[0_4px_12px_rgba(251,77,39,0.3)]"
                       >
                         <Eye size={16} /> View & Bid

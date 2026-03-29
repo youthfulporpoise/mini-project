@@ -76,7 +76,7 @@ export default function AuthPage() {
         expires: 1,
       });
       const role = res.data.role;
-      if (role === "HOD") router.push("/overview");
+      if (role === "HOD") router.push("/hod");
       else if (role === "PRINCIPAL") router.push("/principal");
       else if (role === "ACCOUNTANT") router.push("/accountant");
       else if (role === "VENDOR") router.push("/vendor");
@@ -112,7 +112,7 @@ export default function AuthPage() {
         },
       );
       const role = signupData.role;
-      if (role === "HOD") router.push("/overview");
+      if (role === "HOD") router.push("/hod");
       else if (role === "PRINCIPAL") router.push("/principal");
       else if (role === "ACCOUNTANT") router.push("/accountant");
       else if (role === "VENDOR") router.push("/vendor");

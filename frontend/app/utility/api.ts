@@ -3,21 +3,37 @@ import axios from "axios";
 import Cookies from "js-cookie";
 import { BACKEND_URL } from "../utility";
 
-const csrfToken = Cookies.get("csrftoken");
-const options = {
+// Axios instance for custom config
+const instance = axios.create({
+  baseURL: BACKEND_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
-    "X-CSRFToken": csrfToken,
   },
-};
+});
 
-const responsesUrl = `${BACKEND_URL}/responses/`;
-const quotationsUrl = `${BACKEND_URL}/qt/`;
-// GET REQUESTS
+// This function run dynamically every time a request is hit.
+instance.interceptors.request.use(
+  (config) => {
+    const csrfToken = Cookies.get("csrftoken");
+    if (csrfToken) {
+      config.headers["X-CSRFToken"] = csrfToken;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
+
+const responsesUrl = `/responses/`;
+const quotationsUrl = `/qt/`;
+
+// --- GET REQUESTS ---
+
 export async function fetchQuotations() {
   try {
-    const response = await axios.get(quotationsUrl, options);
+    const response = await instance.get(quotationsUrl);
     return response.data;
   } catch (error) {
     console.error("Error fetching quotation data:", error);
@@ -27,29 +43,17 @@ export async function fetchQuotations() {
 
 export async function fetchQuotationById(quotation_id: string) {
   try {
-    const url = `${BACKEND_URL}/qt/${quotation_id}`;
-    const response = await axios.get(url, options);
+    const response = await instance.get(`/qt/${quotation_id}`);
     return response.data;
   } catch (error) {
     console.error("Error fetching quotation data:", error);
     return null;
   }
 }
+
 export async function fetchResponses() {
   try {
-    const response = await axios.get(responsesUrl, options);
-    console.log(response);
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching responses data:", error);
-    return null;
-  }
-}
-export async function acceptedQuotations() {
-  try {
-    const qtAcceptUrl = `${BACKEND_URL}/quotations/accepted/`;
-    const response = await axios.get(qtAcceptUrl, options);
-    console.log(response);
+    const response = await instance.get(responsesUrl);
     return response.data;
   } catch (error) {
     console.error("Error fetching responses data:", error);
@@ -57,13 +61,21 @@ export async function acceptedQuotations() {
   }
 }
 
-// POST REQUESTS
+export async function acceptedQuotations() {
+  try {
+    const response = await instance.get(`/quotations/accepted/`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching accepted quotations data:", error);
+    return null;
+  }
+}
+
+// --- POST REQUESTS ---
 
 export async function performLogout() {
   try {
-    const url = `${BACKEND_URL}/logout/`;
-
-    const response = await axios.post(url, {}, options);
+    const response = await instance.post(`/logout/`, {});
 
     Cookies.remove("userProfile");
     Cookies.remove("csrftoken");
@@ -75,9 +87,9 @@ export async function performLogout() {
   }
 }
 
-export async function createQuotation(backendData) {
+export async function createQuotation(backendData: any) {
   try {
-    const response = await axios.post(quotationsUrl, backendData, options);
+    const response = await instance.post(quotationsUrl, backendData);
     return response.data;
   } catch (error) {
     console.error("Error creating quotation data:", error);
@@ -85,11 +97,9 @@ export async function createQuotation(backendData) {
   }
 }
 
-export async function createResponses(backendData) {
+export async function createResponses(backendData: any) {
   try {
-    console.log(backendData);
-    const response = await axios.post(responsesUrl, backendData, options);
-    console.log(response);
+    const response = await instance.post(responsesUrl, backendData);
     return response.data;
   } catch (error) {
     console.error("Error creating a new response: ", error);
@@ -102,50 +112,38 @@ export async function performQuotationApproval(
   responseId: string,
 ) {
   try {
-    const qtAcceptUrl = `${BACKEND_URL}/quotations/accepted/`;
-    const response = await axios.post(
-      qtAcceptUrl,
-      { quotation: quotationId, response: responseId },
-      options,
-    );
-    console.log(response);
+    const response = await instance.post(`/quotations/accepted/`, { 
+      quotation: quotationId, 
+      response: responseId 
+    });
     return response.data;
   } catch (error) {
     console.error("Error Accepting the quotation: ", error);
     return null;
   }
 }
+
 export async function generateOTP(quotationId: string) {
   try {
-    const url = `${BACKEND_URL}/delivery/generate-otp/`;
-    const response = await axios.post(
-      url,
-      { quotation_id: quotationId },
-      options,
-    );
-
+    const response = await instance.post(`/delivery/generate-otp/`, { 
+      quotation_id: quotationId 
+    });
     return response.data;
   } catch (error) {
     console.error("Error generating the otp : ", error);
     return null;
   }
 }
+
 export async function verifyOTP(quotationId: string, otp: string) {
   try {
-    const url = `${BACKEND_URL}/delivery/verify-otp/`;
-
-    const response = await axios.post(
-      url,
-      {
-        quotation_id: quotationId,
-        otp: otp,
-      },
-      options,
-    );
-
+    const response = await instance.post(`/delivery/verify-otp/`, {
+      quotation_id: quotationId,
+      otp: otp,
+    });
     return response.data;
   } catch (error) {
-    console.error("Error generating the otp : ", error);
+    console.error("Error verifying the otp : ", error);
     return null;
   }
 }
