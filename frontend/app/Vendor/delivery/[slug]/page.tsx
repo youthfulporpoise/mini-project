@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import axios from "axios";
 import Cookies from "js-cookie";
 import {
   ArrowLeft,
@@ -14,7 +13,6 @@ import {
   KeyRound,
   Mail,
 } from "lucide-react";
-import { BACKEND_URL } from "@/app/utility";
 import { acceptedQuotations, fetchQuotationById, fetchResponses, generateOTP } from "@/app/utility/api"; // Added generateOTP
 
 export default function VendorDeliveryPage() {

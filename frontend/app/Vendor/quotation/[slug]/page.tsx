@@ -2,13 +2,11 @@
 
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import axios from "axios";
 import Cookies from "js-cookie";
 import { ArrowLeft, FileText, CheckCircle2, Clock, Package } from "lucide-react";
-import VendorResponseForm from "@/app/components/Vendor/VendorResponseForm"; // Adjust path if needed
-import { BACKEND_URL } from "@/app/utility";
-import { fetchResponses } from "@/app/utility/api";
-import { Quotation, VendorResponseItem } from "@/app/utility/index";
+import VendorResponseForm from "@/app/components/VendorResponseForm"; // Adjust path if needed
+import { fetchQuotationById, fetchResponses } from "@/app/utility/api";
+import { Quotation } from "@/app/utility/index";
 
 export default function VendorQuotationDetails() {
   const router = useRouter();
@@ -36,8 +34,8 @@ export default function VendorQuotationDetails() {
         }
 
         // 2. Fetch Quotation Details
-        const qtResponse = await axios.get(`${BACKEND_URL}/qt/${slug}`);
-        const qtData = qtResponse.data;
+        const qtResponse = await fetchQuotationById(slug as string)
+        const qtData = qtResponse;
         
         const formattedQuotation: Quotation = {
           id: qtData.id,

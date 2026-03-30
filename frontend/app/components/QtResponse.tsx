@@ -1,13 +1,12 @@
-'use client'
+"use client";
 import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { BACKEND_URL } from "../utility";
 import { Send } from "lucide-react";
-import axios from "axios";
 import { Quotation } from "../utility/index";
 import { getStatusConfig } from "../src/utils/Status";
 import { formatDate } from "../src/utils/DateFormat";
+import { fetchQuotations } from "../utility/api";
 
 const getQuotationTotal = (items: { amount: number }[]) => {
   return items.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -19,17 +18,10 @@ export const QtResponses = () => {
   useEffect(() => {
     const getQuotations = async () => {
       try {
-        const url = `${BACKEND_URL}/qt/`;
-        const options = {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        };
-
-        const response = await axios.get(url, options);
+        const response = await fetchQuotations();
 
         const data = response.data;
-     
+
         const backendData: Quotation[] = data.map((data) => ({
           id: data.id,
           category: data.category,

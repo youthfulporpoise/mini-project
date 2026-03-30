@@ -16,9 +16,7 @@ import {
   Search,
 } from "lucide-react";
 import axios from "axios";
-import Cookies from "js-cookie";
-import { BACKEND_URL } from "../../utility";
-import { verifyOTP } from "@/app/utility/api";
+import { fetchQuotations, verifyOTP } from "@/app/utility/api";
 
 interface ApprovedQuotation {
   id: number;
@@ -43,13 +41,10 @@ export default function VerifyDeliveryPage() {
     const fetchApprovedQuotations = async () => {
       setIsLoading(true);
       try {
-        const { data } = await axios.get(`${BACKEND_URL}/qt/`);
+        const data  = await fetchQuotations();
 
         // Filter ONLY quotations that are fully approved by the Principal
-        const verifiedList = data.filter(
-          (q: any) =>
-            q.qt_verified_principal === true && q.status === "APPROVED",
-        );
+        const verifiedList = data.filter((q: any) => q.status === "APPROVED");
 
         setApprovedQuotations(verifiedList);
         setFilteredQuotations(verifiedList);

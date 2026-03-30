@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Sidebar } from "@/app/components/Sidebar"; // Adjust path if needed
 import { 
   Search, 
   CreditCard, 
@@ -9,7 +8,6 @@ import {
   ArrowDownLeft, 
   Clock, 
   Building2,
-  FileText,
   CheckCircle2,
   XCircle
 } from "lucide-react";

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import axios from "axios";
 import {
   Package,
   CheckCircle2,
@@ -14,8 +13,11 @@ import {
   FileText,
   CheckCheck,
 } from "lucide-react";
-import { BACKEND_URL } from "@/app/utility";
-import { fetchQuotations, fetchResponses } from "@/app/utility/api";
+import {
+  acceptedQuotations,
+  fetchQuotations,
+  fetchResponses,
+} from "@/app/utility/api";
 
 interface EnrichedResponse {
   id: number;
@@ -54,20 +56,14 @@ export default function VendorResponsesPage() {
 
         // 2. Fetch Quotations, Responses, AND Accepted Quotations simultaneously
         const [allQuotations, allResponsesRes, acceptedRes] = await Promise.all(
-          [
-            fetchQuotations(),
-            fetchResponses(),
-            axios
-              .get(`${BACKEND_URL}/quotations/accepted/`)
-              .catch(() => ({ data: [] })), // Catch 404s safely
-          ],
+          [fetchQuotations(), fetchResponses(), acceptedQuotations()],
         );
-
+ console.log(allQuotations, allResponsesRes, acceptedRes )
         const allResponses = Array.isArray(allResponsesRes)
           ? allResponsesRes
-          : allResponsesRes.data;
-        const acceptedData = Array.isArray(acceptedRes.data)
-          ? acceptedRes.data
+          : allResponsesRes;
+        const acceptedData = Array.isArray(acceptedRes)
+          ? acceptedRes
           : [];
 
         // 3. Filter responses belonging ONLY to this vendor
@@ -179,9 +175,12 @@ export default function VendorResponsesPage() {
   const approvedOrDeliveredCount = myResponses.filter(
     (r) => r.status === "ACCEPTED" || r.status === "DELIVERED",
   ).length;
-  
+
   const pendingCount = myResponses.filter(
-    (r) => r.status !== "ACCEPTED" && r.status !== "DELIVERED" && r.status !== "REJECTED",
+    (r) =>
+      r.status !== "ACCEPTED" &&
+      r.status !== "DELIVERED" &&
+      r.status !== "REJECTED",
   ).length;
 
   return (
@@ -200,7 +199,8 @@ export default function VendorResponsesPage() {
                 </span>
               </div>
               <p className="text-[13.5px] text-[#929090]">
-                Track the status of your submitted bids and process approved deliveries.
+                Track the status of your submitted bids and process approved
+                deliveries.
               </p>
             </div>
             <div className="text-right">
@@ -294,7 +294,9 @@ export default function VendorResponsesPage() {
                         </p>
                         <p
                           className={`font-mono text-[18px] font-bold ${
-                            isApproved || isDelivered ? "text-[#1a8c30]" : "text-[#111110]"
+                            isApproved || isDelivered
+                              ? "text-[#1a8c30]"
+                              : "text-[#111110]"
                           }`}
                         >
                           ₹{res.totalAmount.toLocaleString("en-IN")}
@@ -313,7 +315,8 @@ export default function VendorResponsesPage() {
                       <div className="mt-auto">
                         {isDelivered ? (
                           <div className="flex w-full items-center justify-center gap-2 rounded-[9px] bg-[#28CA41]/10 px-4 py-3 text-[13.5px] font-bold text-[#1a8c30]">
-                            <CheckCheck size={16} /> Delivery Successfully Verified
+                            <CheckCheck size={16} /> Delivery Successfully
+                            Verified
                           </div>
                         ) : isApproved ? (
                           <button
@@ -337,7 +340,7 @@ export default function VendorResponsesPage() {
                         ) : (
                           <button
                             onClick={() =>
-                              router.push(`/vendor/quotations/${res.quotation}`)
+                              router.push(`/vendor/quotation/${res.quotation}`)
                             }
                             className="flex w-full items-center justify-between rounded-[9px] border-[1.5px] border-black/10 bg-white px-4 py-3 text-[13.5px] font-semibold text-[#111110] transition-colors hover:bg-[#F2F2F2]"
                           >

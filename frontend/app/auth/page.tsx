@@ -2,8 +2,12 @@
 import { useState, ChangeEvent, FormEvent } from "react";
 import axios from "axios";
 import { useRouter } from "next/navigation";
-import { BACKEND_URL } from "../utility";
 import Cookies from "js-cookie";
+import {
+  fetchProfileDetails,
+  performLogin,
+  registrationRequest,
+} from "../utility/api";
 
 type Role = "HOD" | "PRINCIPAL" | "ACCOUNTANT" | "VENDOR" | "ADMIN";
 type Mode = "login" | "signup";
@@ -59,20 +63,13 @@ export default function AuthPage() {
     setError("");
     setLoading(true);
     try {
-      const res = await axios.post(
-        `${BACKEND_URL}/login/`,
-        { username: loginData.username, password: loginData.password },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-          auth: { username: loginData.username, password: loginData.password },
-          xsrfCookieName: "csrftoken",
-        },
-      );
-      const profileRes = await axios.get(`${BACKEND_URL}/profile/`, {
-        withCredentials: true,
-      });
-      Cookies.set("userProfile", JSON.stringify(profileRes.data), {
+      const userDetails = {
+        username: loginData.username,
+        password: loginData.password,
+      };
+      const res = await performLogin(userDetails);
+      const profileRes = await fetchProfileDetails();
+      Cookies.set("userProfile", JSON.stringify(profileRes), {
         expires: 1,
       });
       const role = res.data.role;
@@ -97,20 +94,15 @@ export default function AuthPage() {
     setError("");
     setLoading(true);
     try {
-      await axios.post(
-        `${BACKEND_URL}/register/`,
-        {
-          username: signupData.username,
-          email: signupData.email,
-          password: signupData.password,
-          phone: signupData.phone,
-          role: signupData.role,
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        },
-      );
+      const userRegistrationDetails = {
+        username: signupData.username,
+        email: signupData.email,
+        password: signupData.password,
+        phone: signupData.phone,
+        role: signupData.role,
+      };
+      await registrationRequest(userRegistrationDetails);
+
       const role = signupData.role;
       if (role === "HOD") router.push("/hod");
       else if (role === "PRINCIPAL") router.push("/principal");

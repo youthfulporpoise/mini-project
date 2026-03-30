@@ -1,8 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
-import { Sidebar } from "@/app/components/Sidebar"; // Adjust path if needed
 import PaymentButton from "@/app/components/PaymentButton"; // Adjust path if needed
 import {
   CreditCard,
@@ -11,8 +9,11 @@ import {
   Building2,
   Clock,
 } from "lucide-react";
-import { BACKEND_URL } from "@/app/utility";
-import { fetchQuotations, fetchResponses } from "@/app/utility/api";
+import {
+  acceptedQuotations,
+  fetchQuotations,
+  fetchResponses,
+} from "@/app/utility/api";
 
 interface PayableQuotation {
   id: string | number;
@@ -37,19 +38,17 @@ export default function PendingPaymentsPage() {
         // Fetch all required data concurrently
         const [qtRes, acceptedRes, responsesRes] = await Promise.all([
           fetchQuotations(),
-          axios
-            .get(`${BACKEND_URL}/quotations/accepted/`)
-            .catch(() => ({ data: [] })),
+          acceptedQuotations(),
           fetchResponses().catch(() => []),
         ]);
 
-        const rawQuotations = Array.isArray(qtRes) ? qtRes : qtRes.data || [];
-        const acceptedRecords = Array.isArray(acceptedRes.data)
-          ? acceptedRes.data
+        const rawQuotations = Array.isArray(qtRes) ? qtRes : qtRes || [];
+        const acceptedRecords = Array.isArray(acceptedRes)
+          ? acceptedRes
           : [];
         const allResponses = Array.isArray(responsesRes)
           ? responsesRes
-          : responsesRes.data || [];
+          : responsesRes || [];
 
         // 1. Filter ONLY quotations that are successfully DELIVERED
         const deliveredQuotations = rawQuotations.filter(

@@ -18,8 +18,6 @@ const menuItems: MenuItem[] = [
     label: "OTP Verification",
     href: "/hod/otp_verify",
   },
-
-  { id: 5, icon: "CreditCard", label: "Transactions", href: "/hod/transactions" },
 ];
 
 export default function HodLayout({ children }: { children: React.ReactNode }) {

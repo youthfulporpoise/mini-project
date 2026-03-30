@@ -3,12 +3,11 @@ import { Eye } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import axios from "axios";
 import { Quotation } from "@/app/utility/index";
 import { getStatusConfig } from "@/app/src/utils/Status";
 import { formatDate } from "@/app/src/utils/DateFormat";
-import { BACKEND_URL } from "@/app/utility";
 import PaymentButton from "@/app/components/PaymentButton";
+import { fetchQuotations } from "@/app/utility/api";
 
 const getQuotationTotal = (items: { amount: number }[]) => {
   return items.reduce((sum, item) => sum + (item.amount || 0), 0);
@@ -20,9 +19,7 @@ export default function Page() {
   useEffect(() => {
     const getQuotations = async () => {
       try {
-        const { data } = await axios.get(`${BACKEND_URL}/qt/`, {
-          withCredentials: true,
-        });
+        const data = await fetchQuotations();
 
         const backendData: Quotation[] = data
           .map((d: any) => ({

@@ -1,18 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
 import {
   Search,
   History,
   FileText,
   Building2,
   CheckCircle2,
-  IndianRupee,
   CalendarDays,
 } from "lucide-react";
-import { BACKEND_URL } from "@/app/utility";
-import { fetchResponses } from "@/app/utility/api";
+import {
+  acceptedQuotations,
+  fetchQuotations,
+  fetchResponses,
+} from "@/app/utility/api";
 
 interface HistoricalRecord {
   id: string | number;
@@ -36,25 +37,22 @@ export default function ApprovalHistoryPage() {
       try {
         // Fetch all required data concurrently
         const [qtRes, acceptedRes, responsesRes] = await Promise.all([
-          axios.get(`${BACKEND_URL}/qt/`),
-          axios
-            .get(`${BACKEND_URL}/quotations/accepted/`)
-            .catch(() => ({ data: [] })),
-          fetchResponses().catch(() => []),
+          fetchQuotations(),
+          acceptedQuotations(),
+          fetchResponses(),
         ]);
 
-        const rawQuotations = qtRes.data;
-        const acceptedRecords = Array.isArray(acceptedRes.data)
-          ? acceptedRes.data
-          : [];
+        const rawQuotations = qtRes;
+        const acceptedRecords = Array.isArray(acceptedRes) ? acceptedRes : [];
         const allResponses = Array.isArray(responsesRes)
           ? responsesRes
-          : responsesRes.data || [];
+          : responsesRes || [];
 
         // 1. Filter ONLY quotations fully approved by the Principal
+
         const approvedQuotations = rawQuotations.filter(
           (q: any) =>
-            q.qt_verified_principal === true && q.status === "APPROVED",
+            q.qt_verified_principal === true && q.status === "DELIVERED",
         );
 
         // 2. Map and enrich with winning vendor data

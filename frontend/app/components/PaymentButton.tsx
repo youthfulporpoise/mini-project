@@ -1,9 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import axios from "axios";
 import Cookies from "js-cookie";
-import { BACKEND_URL } from "@/app/utility";
+import { createOrder, verifyPayment } from "../utility/api";
 
 const RAZORPAY_KEY = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID;
 
@@ -37,19 +36,9 @@ export default function PaymentButton({
         s.onerror = () => reject();
         document.body.appendChild(s);
       });
-
+      const payload = { quotation_id: quotationId, amount };
       // Step 2 — create order from Django
-      const { data } = await axios.post(
-        `${BACKEND_URL}/payment/create-order/`,
-        { quotation_id: quotationId, amount },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "X-CSRFToken": csrfToken,
-          },
-          withCredentials: true,
-        },
-      );
+      const data = await createOrder(payload);
 
       // Step 3 — open razorpay popup
       const options = {
@@ -66,22 +55,14 @@ export default function PaymentButton({
         theme: { color: "#2563eb" },
 
         // Step 4 — on success verify with Django
+
         handler: async (response: any) => {
-          await axios.post(
-            `${BACKEND_URL}/payment/verify/`,
-            {
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_signature: response.razorpay_signature,
-            },
-            {
-              headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": csrfToken,
-              },
-              withCredentials: true,
-            },
-          );
+          const payload = {
+            razorpay_order_id: response.razorpay_order_id,
+            razorpay_payment_id: response.razorpay_payment_id,
+            razorpay_signature: response.razorpay_signature,
+          };
+          await verifyPayment(payload);
           setPaid(true);
         },
       };

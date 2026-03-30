@@ -1,20 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import axios from "axios";
 import Cookies from "js-cookie";
-import { Sidebar } from "../components/Sidebar";
 import {
   CheckCircle2,
   XCircle,
   ShieldCheck,
   FileText,
   Clock,
-  Building2,
   Trophy,
 } from "lucide-react";
-import { BACKEND_URL } from "../utility";
-import { fetchResponses } from "../utility/api"; // Added this import
+import {
+  acceptedQuotations,
+  fetchQuotations,
+  fetchResponses,
+  updateQuotationById,
+} from "../utility/api"; // Added this import
 
 // Extended interface to hold the new bid data
 interface PrincipalQuotation {
@@ -59,20 +60,18 @@ export default function PrincipalDashboard() {
       setIsLoading(true);
       try {
         const [qtRes, acceptedRes, responsesRes] = await Promise.all([
-          axios.get(`${BACKEND_URL}/qt/`),
-          axios
-            .get(`${BACKEND_URL}/quotations/accepted/`)
-            .catch(() => ({ data: [] })),
-          fetchResponses().catch(() => []),
+          fetchQuotations(),
+          acceptedQuotations(),
+          fetchResponses(),
         ]);
 
-        const rawQuotations = qtRes.data;
-        const acceptedRecords = Array.isArray(acceptedRes.data)
-          ? acceptedRes.data
+        const rawQuotations = qtRes;
+        const acceptedRecords = Array.isArray(acceptedRes)
+          ? acceptedRes
           : [];
         const allResponses = Array.isArray(responsesRes)
           ? responsesRes
-          : responsesRes.data || [];
+          : responsesRes || [];
 
         // Map backend snake_case to frontend camelCase AND attach winning bid info
         const mappedData: PrincipalQuotation[] = rawQuotations.map((d: any) => {
@@ -156,10 +155,11 @@ export default function PrincipalDashboard() {
   const handleApprove = async (id: string) => {
     setProcessingId(id);
     try {
-      await axios.patch(`${BACKEND_URL}/qt/${id}`, {
+      const payload = {
         qt_verified_principal: true,
-        status: "APPROVED",
-      });
+        status: "DELIVERED",
+      };
+      await updateQuotationById(id, payload);
 
       // Optimistic UI update
       const approvedItem = pendingRequests.find(
@@ -190,9 +190,10 @@ export default function PrincipalDashboard() {
 
     setProcessingId(id);
     try {
-      await axios.patch(`${BACKEND_URL}/qt/${id}`, {
+      const payload = {
         status: "REJECTED",
-      });
+      };
+      await updateQuotationById(id, payload);
 
       // Optimistic UI update
       const rejectedItem = pendingRequests.find(
