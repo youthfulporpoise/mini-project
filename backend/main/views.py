@@ -1,6 +1,7 @@
 import razorpay
 import hmac
 import hashlib
+import requests 
 
 from django.shortcuts import render
 from django.core.mail import send_mail
@@ -436,7 +437,30 @@ class VerifyOTPView(views.APIView):
     )
 
 
-@login_required
+# get all transactions 
+class RazorpayTransactions(views.APIView):
+  permission_classes = [permissions.AllowAny]
+
+  def get(self, request):
+      try:
+          # Basic Auth — Razorpay uses Key ID + Key Secret
+          auth = (
+              settings.RAZORPAY_KEY_ID,
+              settings.RAZORPAY_KEY_SECRET
+          )
+
+          # Razorpay API URL for fetching all payments
+          url = "https://api.razorpay.com/v1/payments"
+
+          response = requests.get(url, auth=auth)
+          data = response.json()
+
+          return Response(data)
+
+      except Exception as e:
+          return Response({"error": str(e)}, status=400)
+
+# @login_required
 def initiate_payment(request):
     """Step 1: Create a Razorpay order and archive it with 'created' status."""
 
@@ -463,7 +487,7 @@ def initiate_payment(request):
 
 
 # Razorpay posts here; protect via signature check instead
-@csrf_exempt
+# @csrf_exempt
 def payment_callback(request):
     """Step 2: Called after user completes payment on the frontend."""
 

@@ -22,6 +22,7 @@ urlpatterns = [
   path("payment/initiate/", views.initiate_payment),
   path("payment/callback/", views.payment_callback),
 
+  path("razorpay/transactions/", views.RazorpayTransactions.as_view()),
   path("delivery/generate-otp/", views.GenerateOTPView.as_view()),
   path("delivery/verify-otp/", views.VerifyOTPView.as_view()),
 
