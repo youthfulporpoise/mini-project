@@ -71,6 +71,16 @@ export async function acceptedQuotations() {
   }
 }
 
+export async function getAllTransactionDetails() {
+  try {
+    const response = await instance.get(`/razorpay/transactions`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching Transactions:", error);
+    return null;
+  }
+}
+
 // --- POST REQUESTS ---
 
 export async function performLogout() {
@@ -112,9 +122,9 @@ export async function performQuotationApproval(
   responseId: string,
 ) {
   try {
-    const response = await instance.post(`/quotations/accepted/`, { 
-      quotation: quotationId, 
-      response: responseId 
+    const response = await instance.post(`/quotations/accepted/`, {
+      quotation: quotationId,
+      response: responseId,
     });
     return response.data;
   } catch (error) {
@@ -125,8 +135,8 @@ export async function performQuotationApproval(
 
 export async function generateOTP(quotationId: string) {
   try {
-    const response = await instance.post(`/delivery/generate-otp/`, { 
-      quotation_id: quotationId 
+    const response = await instance.post(`/delivery/generate-otp/`, {
+      quotation_id: quotationId,
     });
     return response.data;
   } catch (error) {

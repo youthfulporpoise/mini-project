@@ -73,6 +73,7 @@ export default function HodOverviewDashboard() {
     );
   };
 
+  
   // Get top 4 recent items to display on the dashboard
   const recentQuotations = quotations.slice(0, 5);
   const recentResponses = responses.slice(0, 5);
@@ -120,7 +121,7 @@ export default function HodOverviewDashboard() {
             },
             {
               label: "Pending Deliveries",
-              val: "2", // Replace with dynamic data if available
+              val: "0", // Replace with dynamic data if available
               sub: "Awaiting OTP Verification",
               color: "#28CA41",
               bg: "bg-[#28CA41]/10",

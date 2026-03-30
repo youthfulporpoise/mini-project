@@ -4,6 +4,8 @@ import { MenuItem } from "@/app/utility/index";
 
 const menuItems: MenuItem[] = [
   { id: 1, icon: "Home", label: "Dashboard", href: "/accountant" },
+  { id: 2, icon: "Wallet", label: "Payments", href: "/accountant/payments" },
+  { id: 3, icon: "History", label: "Transactions", href: "/accountant/transactions" },
  
 ];
 

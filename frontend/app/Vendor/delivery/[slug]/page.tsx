@@ -15,7 +15,7 @@ import {
   Mail,
 } from "lucide-react";
 import { BACKEND_URL } from "@/app/utility";
-import { fetchResponses, generateOTP } from "@/app/utility/api"; // Added generateOTP
+import { acceptedQuotations, fetchQuotationById, fetchResponses, generateOTP } from "@/app/utility/api"; // Added generateOTP
 
 export default function VendorDeliveryPage() {
   const router = useRouter();
@@ -51,16 +51,14 @@ export default function VendorDeliveryPage() {
         }
 
         // 2. Fetch the quotation details
-        const qtRes = await axios.get(`${BACKEND_URL}/qt/${slug}`);
-        setQuotation(qtRes.data);
+        const qtRes = await fetchQuotationById(slug as string)
+        setQuotation(qtRes);
 
         // 3. Fetch the accepted quotations list
-        const acceptedRes = await axios.get(
-          `${BACKEND_URL}/quotations/accepted/`,
-        );
+        const acceptedRes = await acceptedQuotations(); 
 
         // Find if this specific quotation has an accepted record
-        const acceptedRecord = acceptedRes.data.find(
+        const acceptedRecord = acceptedRes.find(
           (record: any) => String(record.quotation) === String(slug),
         );
 
