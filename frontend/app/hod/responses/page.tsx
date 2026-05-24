@@ -44,10 +44,11 @@ export default function ResponsesPage() {
 
   const renderResponseStatusBadge = (status: VendorResponse["status"]) => {
     const styles = {
-      PENDING: "bg-[#FFBD2E]/15 text-[#9a6e00] border-[#FFBD2E]/25",
       APPROVED: "bg-[#28CA41]/10 text-[#1a8c30] border-[#28CA41]/20",
+      PENDING: "bg-[#FFBD2E]/15 text-[#9a6e00] border-[#FFBD2E]/25",
       REJECTED: "bg-[#FF5F57]/10 text-[#c53030] border-[#FF5F57]/20",
-      DELIVERED: "bg-[#007AFF]/10 text-[#0056b3] border-[#007AFF]/20",
+      DELIVERED: "bg-[#5B7FA6]/10 text-[#5B7FA6] border-[#5B7FA6]/20",
+      SUCCESS: "bg-[#0B6623]/10 text-[#5B7FA6] border-[#5B7FA6]/20",
     };
 
     // Safely fallback to PENDING
@@ -155,11 +156,12 @@ export default function ResponsesPage() {
                         // This response won! Check if it's already delivered.
                         if (relatedQuotation?.status === "DELIVERED") {
                           calculatedStatus = "DELIVERED";
-                        } else {
+                        } else if (relatedQuotation?.status === "APPROVED") {
                           calculatedStatus = "APPROVED";
+                        } else if (relatedQuotation?.status === "SUCCESS") {
+                          calculatedStatus = "SUCCESS";
                         }
                       } else {
-                          
                         calculatedStatus = "REJECTED";
                       }
                     }

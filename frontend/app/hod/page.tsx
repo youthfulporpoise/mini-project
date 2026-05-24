@@ -12,11 +12,10 @@ import {
   XCircle,
   Package,
   ArrowRight,
+  BadgeCheck,
 } from "lucide-react";
 import { fetchQuotations, fetchResponses } from "../utility/api";
 import { Quotation, VendorResponse } from "../utility/index";
-
-
 
 export default function HodOverviewDashboard() {
   const router = useRouter();
@@ -38,7 +37,6 @@ export default function HodOverviewDashboard() {
         const sortedRes = resData.sort((a, b) => b.id - a.id);
         if (sortedQt) setQuotations(sortedQt);
         if (sortedRes) setResponses(sortedRes);
-        
       } catch (error) {
         console.error("Failed to fetch dashboard data:", error);
       } finally {
@@ -55,12 +53,14 @@ export default function HodOverviewDashboard() {
       PENDING: "bg-[#FFBD2E]/15 text-[#9a6e00] border-[#FFBD2E]/25",
       REJECTED: "bg-[#FF5F57]/10 text-[#c53030] border-[#FF5F57]/20",
       DELIVERED: "bg-[#5B7FA6]/10 text-[#5B7FA6] border-[#5B7FA6]/20",
+      SUCCESS: "bg-[#0B6623]/10 text-[#5B7FA6] border-[#5B7FA6]/20",
     };
     const icons = {
       APPROVED: <CheckCircle2 size={12} className="mr-1" />,
       PENDING: <Clock size={12} className="mr-1" />,
       REJECTED: <XCircle size={12} className="mr-1" />,
       DELIVERED: <Package size={12} className="mr-1" />,
+      SUCCESS: <BadgeCheck size={12} className="mr-1" />,
     };
 
     return (
@@ -73,7 +73,6 @@ export default function HodOverviewDashboard() {
     );
   };
 
-  
   // Get top 4 recent items to display on the dashboard
   const recentQuotations = quotations.slice(0, 5);
   const recentResponses = responses.slice(0, 5);
