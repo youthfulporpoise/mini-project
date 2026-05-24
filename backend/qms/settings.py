@@ -76,8 +76,8 @@ DEFAULT_FROM_EMAIL = 'vendor@email.com'
 
 # RazorPay payment settings
 
-RAZORPAY_KEY_ID = "rzp_test_SUBdQiih14Jc24"
-RAZORPAY_KEY_SECRET = "BliZWeVbYCgTChBrQ8oSWYMq"
+RAZORPAY_KEY_ID = "rzp_test_StBdzeU5UgqJxu"
+RAZORPAY_KEY_SECRET = "CAY1rJPrODfV0xiyLW729SV0"
 
 
 # Session authentication settings

@@ -33,6 +33,7 @@ class Quotation(models.Model):
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
     DELIVERED = "DELIVERED", "Delivered"
+    SUCCESS = "SUCCESS", "Success"
 
   title = models.CharField(max_length=512)
   department = models.CharField(max_length=512)
@@ -45,7 +46,8 @@ class Quotation(models.Model):
 
   qt_req_verified_accountant = models.BooleanField(default=False)
   final_qt_verified_accountant = models.BooleanField(default=False)
-  qt_verified_principal = models.BooleanField(default=False )
+  qt_verified_principal = models.BooleanField(default=False)
+  qt_req_verified_principal = models.BooleanField(default=False)
 
 
 class QuotationResponse(models.Model):

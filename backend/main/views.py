@@ -128,7 +128,7 @@ class VerifyPaymentView(views.APIView):
             payment.save()
 
             # update quotation status to paid
-            payment.quotation.status = 5
+            payment.quotation.status = "SUCCESS"
             payment.quotation.save()
 
             return Response({"message": "payment verified", "status": "success"})
