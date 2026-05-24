@@ -59,7 +59,7 @@ from main.permissions import (
   IsHOD,
   IsPrincipal,
   IsAccountant,
-  IsVendor
+  IsVendor,
 )
 
 
@@ -74,19 +74,19 @@ class CreatePaymentOrderView(views.APIView):
     def post(self, request):
         try:
             quotation_id = request.data.get("quotation_id")
-            amount = request.data.get("amount")        # in rupees
+            amount = request.data.get("amount")
 
-            # convert rupees to paise
+            # convert rupees to paise because amount is in rupees
             amount_paise = int(amount) * 100
 
             # create order on razorpay
             order = razorpay_client.order.create({
                 "amount": amount_paise,
                 "currency": "INR",
-                "payment_capture": 1,           # auto capture
+                "payment_capture": 1,
+                # enable auto capture
             })
 
-            # save to db
             Payment.objects.create(
                 quotation=Quotation.objects.get(pk=quotation_id),
                 razorpay_order_id=order["id"],
@@ -111,7 +111,8 @@ class VerifyPaymentView(views.APIView):
         razorpay_payment_id = request.data.get("razorpay_payment_id")
         razorpay_signature = request.data.get("razorpay_signature")
 
-        # verify signature
+        # the signature is verified like below
+
         body = razorpay_order_id + "|" + razorpay_payment_id
         expected_signature = hmac.new(
             settings.RAZORPAY_KEY_SECRET.encode(),
@@ -120,15 +121,14 @@ class VerifyPaymentView(views.APIView):
         ).hexdigest()
 
         if expected_signature == razorpay_signature:
-            # update payment record
             payment = Payment.objects.get(razorpay_order_id=razorpay_order_id)
             payment.razorpay_payment_id = razorpay_payment_id
             payment.razorpay_signature = razorpay_signature
             payment.is_verified = True
             payment.save()
-
             # update quotation status to paid
             payment.quotation.status = "SUCCESS"
+
             payment.quotation.save()
 
             return Response({"message": "payment verified", "status": "success"})
@@ -140,7 +140,6 @@ class VerifyPaymentView(views.APIView):
 ##########################################
 
 User = get_user_model()
-
 
 ###########################################
 
@@ -293,10 +292,12 @@ class QuotationAcceptedResponseList(views.APIView):
       })
     return Response(result)
 
+
 class QuotationResponseDetail(generics.RetrieveUpdateDestroyAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = QuotationResponse.objects.all()
   serializer_class = QuotationResponseSerializer
+
 
 class ResponseItemList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
@@ -308,10 +309,12 @@ class QuotationAcceptedList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
   queryset = QuotationAccepted.objects.all()
   serializer_class = QuotationAcceptedSerializer
+
   def perform_create(self, serializer):
     accepted = serializer.save() 
     accepted.quotation.status = Quotation.Status.APPROVED
     accepted.quotation.save()
+
 
 class ItemList(generics.ListCreateAPIView):
   permission_classes = [permissions.AllowAny]
@@ -437,21 +440,13 @@ class VerifyOTPView(views.APIView):
     )
 
 
-# get all transactions 
 class RazorpayTransactions(views.APIView):
   permission_classes = [permissions.AllowAny]
 
   def get(self, request):
       try:
-          # Basic Auth — Razorpay uses Key ID + Key Secret
-          auth = (
-              settings.RAZORPAY_KEY_ID,
-              settings.RAZORPAY_KEY_SECRET
-          )
-
-          # Razorpay API URL for fetching all payments
+          auth = (settings.RAZORPAY_KEY_ID, settings.RAZORPAY_KEY_SECRET)
           url = "https://api.razorpay.com/v1/payments"
-
           response = requests.get(url, auth=auth)
           data = response.json()
 
@@ -460,15 +455,13 @@ class RazorpayTransactions(views.APIView):
       except Exception as e:
           return Response({"error": str(e)}, status=400)
 
-# @login_required
+
 def initiate_payment(request):
     """Step 1: Create a Razorpay order and archive it with 'created' status."""
 
-    amount_inr = 499.00  # replace with your actual amount logic
-
+    amount_inr = 499.00
     rz_order = create_razorpay_order(amount_inr, notes={"user_id": str(request.user.id)})
 
-    # Archive the order immediately
     PaymentArchive.objects.create(
         user=request.user,
         razorpay_order_id=rz_order["id"],
@@ -507,7 +500,6 @@ def payment_callback(request):
     except PaymentArchive.DoesNotExist:
         return JsonResponse({"error": "Order not found"}, status=status.HTTP_404_NOT_FOUND)
 
-    # Verify signature first — never trust unverified callbacks
     if not verify_signature(order_id, payment_id, signature):
         archive.status = PaymentArchive.Status.FAILED
         archive.save(update_fields=["status"])
@@ -516,10 +508,8 @@ def payment_callback(request):
           status=status.HTTP_400_BAD_REQUEST
         )
 
-    # Fetch full payment details from Razorpay API
     payment_data = fetch_payment(payment_id)
 
-    # Update and archive
     archive.razorpay_payment_id = payment_id
     archive.razorpay_signature = signature
     archive.status = payment_data.get("status", PaymentArchive.Status.CAPTURED)
