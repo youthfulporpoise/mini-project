@@ -13,7 +13,9 @@ import {
   acceptedQuotations,
   fetchQuotations,
   fetchResponses,
+  getAllTransactionDetails,
 } from "@/app/utility/api";
+import { RazorpayTransaction } from "../../utility/index";
 
 interface PayableQuotation {
   id: string | number;
@@ -35,29 +37,40 @@ export default function PendingPaymentsPage() {
     const loadPaymentsQueue = async () => {
       setIsLoading(true);
       try {
-        // Fetch all required data concurrently
-        const [qtRes, acceptedRes, responsesRes] = await Promise.all([
-          fetchQuotations(),
-          acceptedQuotations(),
-          fetchResponses().catch(() => []),
-        ]);
+        const [qtRes, acceptedRes, responsesRes, transactionRes] =
+          await Promise.all([
+            fetchQuotations(),
+            acceptedQuotations(),
+            fetchResponses().catch(() => []),
+            getAllTransactionDetails().catch(() => []),
+          ]);
 
-        const rawQuotations = Array.isArray(qtRes) ? qtRes : qtRes || [];
-        const acceptedRecords = Array.isArray(acceptedRes)
-          ? acceptedRes
+        const rawQuotations = Array.isArray(qtRes) ? qtRes : [];
+        const acceptedRecords = Array.isArray(acceptedRes) ? acceptedRes : [];
+        const allResponses = Array.isArray(responsesRes) ? responsesRes : [];
+        const allTransactions: RazorpayTransaction[] = Array.isArray(
+          transactionRes,
+        )
+          ? transactionRes
           : [];
-        const allResponses = Array.isArray(responsesRes)
-          ? responsesRes
-          : responsesRes || [];
 
-        // 1. Filter ONLY quotations that are successfully DELIVERED
-        const deliveredQuotations = rawQuotations.filter(
-          (q: any) => q.status === "DELIVERED",
-        );
+        const enrichedInvoices: PayableQuotation[] = [];
 
-        // 2. Map and calculate the exact amount to be paid
-        const enrichedInvoices: PayableQuotation[] = deliveredQuotations.map(
-          (d: any) => {
+        // 1. Loop through items that are strictly marked as 'DELIVERED'
+        rawQuotations
+          .filter((q: any) => q.status === "DELIVERED")
+          .forEach((d: any) => {
+            // 2. Check if a completed payment record already matches this quotation index
+            const isAlreadyPaid = allTransactions.some(
+              (t) =>
+                (t.status.toUpperCase() === "CAPTURED" ||
+                  t.status.toUpperCase() === "SETTLED") &&
+                t.description?.includes(`Quotation #${d.id}`),
+            );
+
+            // If the item is already settled, omit it from the display queue
+            if (isAlreadyPaid) return;
+
             const acceptedRecord = acceptedRecords.find(
               (acc: any) => String(acc.quotation) === String(d.id),
             );
@@ -79,7 +92,7 @@ export default function PendingPaymentsPage() {
               }
             }
 
-            return {
+            enrichedInvoices.push({
               id: d.id,
               title: d.title || d.description,
               department: d.department,
@@ -87,11 +100,11 @@ export default function PendingPaymentsPage() {
               status: d.status,
               vendorId,
               amount,
-            };
-          },
-        );
+            });
+          });
 
-        setPayableInvoices(enrichedInvoices);
+        const data = enrichedInvoices.sort((a, b) => b.id - a.id);
+        setPayableInvoices(data);
       } catch (error) {
         console.error("Failed to load payments queue:", error);
       } finally {
@@ -207,7 +220,7 @@ export default function PendingPaymentsPage() {
                   </div>
 
                   {/* Right Side: Payment Action */}
-                  <div className="flex flex-col justify-center border-t border-black/[0.04] bg-[#FAFAFA] p-6 md:w-[320px] md:border-l md:border-t-0">
+                  <div className="flex flex-col items-center text-center border-t border-black/[0.04] bg-[#FAFAFA] p-6 md:w-[320px] md:border-l md:border-t-0 justify-center">
                     <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
                       Final Invoice Amount
                     </p>
@@ -216,14 +229,14 @@ export default function PendingPaymentsPage() {
                     </p>
 
                     {/* Injecting your custom PaymentButton component */}
-                    <div className="w-full">
+                    <div className="w-full flex justify-center">
                       <PaymentButton
                         quotationId={String(invoice.id)}
                         amount={invoice.amount}
                       />
                     </div>
 
-                    <p className="mt-3 flex justify-center items-center gap-1 text-[11px] font-medium text-[#929090]">
+                    <p className="mt-3 flex items-center justify-center gap-1 text-[11px] font-medium text-[#929090]">
                       <Clock size={12} /> Pending Settlement
                     </p>
                   </div>

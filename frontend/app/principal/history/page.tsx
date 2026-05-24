@@ -8,6 +8,7 @@ import {
   Building2,
   CheckCircle2,
   CalendarDays,
+  XCircle,
 } from "lucide-react";
 import {
   acceptedQuotations,
@@ -52,7 +53,8 @@ export default function ApprovalHistoryPage() {
 
         const approvedQuotations = rawQuotations.filter(
           (q: any) =>
-            q.qt_verified_principal === true && q.status === "DELIVERED",
+            (q.qt_verified_principal === true && q.status === "DELIVERED") ||
+            "SUCCESS",
         );
 
         // 2. Map and enrich with winning vendor data
@@ -282,9 +284,15 @@ export default function ApprovalHistoryPage() {
 
                         {/* Status */}
                         <td className="whitespace-nowrap px-6 py-4 text-center">
-                          <span className="inline-flex items-center gap-1.5 rounded-full border border-[#28CA41]/20 bg-[#28CA41]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1a8c30]">
-                            <CheckCircle2 size={12} /> Approved
-                          </span>
+                          {record.winningVendorId ? (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#28CA41]/20 bg-[#28CA41]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1a8c30]">
+                              <CheckCircle2 size={12} /> Approved
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 rounded-full border border-[#FF5F57]/20 bg-[#FF5F57]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#c53030]">
+                              <XCircle size={12} /> Rejected
+                            </span>
+                          )}
                         </td>
                       </tr>
                     ))

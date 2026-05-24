@@ -1,34 +1,25 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { 
-  Search, 
-  CreditCard, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  Clock, 
+import {
+  Search,
+  CreditCard,
+  ArrowUpRight,
+  ArrowDownLeft,
+  Clock,
   Building2,
   CheckCircle2,
-  XCircle
+  XCircle,
 } from "lucide-react";
 import { getAllTransactionDetails } from "@/app/utility/api"; // Adjust path if needed
-
-type RazorpayTransaction = {
-  id: string;
-  amount: number;
-  currency: string;
-  status: string;
-  method: string;
-  bank: string | null;
-  email: string;
-  contact: string;
-  created_at: number;
-  description: string | null;
-};
+import { ExportTransactionsPDFButton } from "@/app/components/JsonToPdfGen";
+import { RazorpayTransaction } from "../../utility/index";
 
 export default function TransactionHistoryPage() {
   const [transactions, setTransactions] = useState<RazorpayTransaction[]>([]);
-  const [filteredTransactions, setFilteredTransactions] = useState<RazorpayTransaction[]>([]);
+  const [filteredTransactions, setFilteredTransactions] = useState<
+    RazorpayTransaction[]
+  >([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -37,7 +28,7 @@ export default function TransactionHistoryPage() {
       setIsLoading(true);
       try {
         const response = await getAllTransactionDetails();
-        
+
         // Handle Razorpay's paginated/collection response structure
         let parsedTransactions: RazorpayTransaction[] = [];
         if (response?.items && Array.isArray(response.items)) {
@@ -48,7 +39,7 @@ export default function TransactionHistoryPage() {
 
         // Sort newest first
         parsedTransactions.sort((a, b) => b.created_at - a.created_at);
-
+        console.log(parsedTransactions);
         setTransactions(parsedTransactions);
         setFilteredTransactions(parsedTransactions);
       } catch (error) {
@@ -68,11 +59,12 @@ export default function TransactionHistoryPage() {
     } else {
       const lowerQuery = searchQuery.toLowerCase();
       const filtered = transactions.filter(
-        (txn) => 
-          txn.id.toLowerCase().includes(lowerQuery) || 
+        (txn) =>
+          txn.id.toLowerCase().includes(lowerQuery) ||
           (txn.email && txn.email.toLowerCase().includes(lowerQuery)) ||
           (txn.method && txn.method.toLowerCase().includes(lowerQuery)) ||
-          (txn.description && txn.description.toLowerCase().includes(lowerQuery))
+          (txn.description &&
+            txn.description.toLowerCase().includes(lowerQuery)),
       );
       setFilteredTransactions(filtered);
     }
@@ -84,10 +76,13 @@ export default function TransactionHistoryPage() {
     let success = 0;
     let failed = 0;
 
-    transactions.forEach(txn => {
-      const isSuccess = txn.status === "captured" || txn.status === "paid" || txn.status === "SUCCESS";
+    transactions.forEach((txn) => {
+      const isSuccess =
+        txn.status === "captured" ||
+        txn.status === "paid" ||
+        txn.status === "SUCCESS";
       if (isSuccess) {
-        vol += (txn.amount / 100); // Convert paise to INR
+        vol += txn.amount / 100; // Convert paise to INR
         success++;
       } else {
         failed++;
@@ -99,10 +94,8 @@ export default function TransactionHistoryPage() {
 
   return (
     <div className="flex min-h-screen bg-[#F2F2F2] font-sans text-[#111110]">
-      
       <main className="flex-1 px-[clamp(20px,4vw,40px)] py-[clamp(24px,4vw,40px)] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] max-md:ml-[68px]">
         <div className="mx-auto max-w-[1200px]">
-          
           {/* ── Header ── */}
           <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-[14px] border border-black/[0.06] bg-white p-6 shadow-sm">
             <div>
@@ -115,13 +108,16 @@ export default function TransactionHistoryPage() {
                 </h1>
               </div>
               <p className="text-[13.5px] text-[#929090]">
-                A comprehensive record of all inward and outward gateway payments.
+                A comprehensive record of all inward and outward gateway
+                payments.
               </p>
             </div>
             <div className="text-right">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Total Processed Volume</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                Total Processed Volume
+              </p>
               <p className="font-mono text-[28px] font-bold text-[#111110]">
-                ₹{totalVolume.toLocaleString('en-IN')}
+                ₹{totalVolume.toLocaleString("en-IN")}
               </p>
             </div>
           </div>
@@ -129,29 +125,42 @@ export default function TransactionHistoryPage() {
           {/* ── Metrics Row ── */}
           <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div className="rounded-[14px] border border-black/[0.06] bg-white p-5 shadow-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Total Transactions</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                Total Transactions
+              </p>
               <p className="mt-1 font-mono text-[32px] font-bold tracking-tight text-[#111110]">
                 {transactions.length}
               </p>
             </div>
             <div className="rounded-[14px] border border-[#28CA41]/30 bg-[#28CA41]/5 p-5 shadow-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1a8c30]">Successful Settled</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#1a8c30]">
+                Successful Settled
+              </p>
               <p className="mt-1 font-mono text-[32px] font-bold tracking-tight text-[#1a8c30]">
                 {successCount}
               </p>
             </div>
             <div className="rounded-[14px] border border-[#FF5F57]/30 bg-[#FF5F57]/5 p-5 shadow-sm">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#c53030]">Failed / Dropped</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.06em] text-[#c53030]">
+                Failed / Dropped
+              </p>
               <p className="mt-1 font-mono text-[32px] font-bold tracking-tight text-[#c53030]">
                 {failedCount}
               </p>
             </div>
           </div>
 
+          {/* Download Transactions*/}
+          <div className="flex flex-row w-full justify-end">
+            <ExportTransactionsPDFButton transactions={transactions} />
+          </div>
           {/* ── Controls Row ── */}
           <div className="mb-6 flex items-center justify-between gap-4">
             <div className="relative w-full max-w-[400px]">
-              <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#929090]" />
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#929090]"
+              />
               <input
                 type="text"
                 placeholder="Search by TXN ID, email, or method..."
@@ -161,7 +170,11 @@ export default function TransactionHistoryPage() {
               />
             </div>
             <div className="text-[13px] font-medium text-[#929090]">
-              Showing <span className="font-bold text-[#111110]">{filteredTransactions.length}</span> records
+              Showing{" "}
+              <span className="font-bold text-[#111110]">
+                {filteredTransactions.length}
+              </span>{" "}
+              records
             </div>
           </div>
 
@@ -171,11 +184,21 @@ export default function TransactionHistoryPage() {
               <table className="w-full text-left">
                 <thead>
                   <tr className="border-b border-black/[0.06] bg-[#FAFAFA]">
-                    <th className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Transaction Details</th>
-                    <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Customer / Vendor info</th>
-                    <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Payment Method</th>
-                    <th className="whitespace-nowrap px-6 py-4 text-right text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Amount (INR)</th>
-                    <th className="whitespace-nowrap px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">Status</th>
+                    <th className="whitespace-nowrap px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                      Transaction Details
+                    </th>
+                    <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                      Customer / Vendor info
+                    </th>
+                    <th className="px-6 py-4 text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                      Payment Method
+                    </th>
+                    <th className="whitespace-nowrap px-6 py-4 text-right text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                      Amount (INR)
+                    </th>
+                    <th className="whitespace-nowrap px-6 py-4 text-center text-[11px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="text-[13.5px] text-[#111110]">
@@ -183,64 +206,107 @@ export default function TransactionHistoryPage() {
                     <tr>
                       <td colSpan={5} className="py-16 text-center">
                         <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-[3px] border-[#111110] border-r-transparent" />
-                        <p className="text-[#929090]">Loading transaction ledger...</p>
+                        <p className="text-[#929090]">
+                          Loading transaction ledger...
+                        </p>
                       </td>
                     </tr>
                   ) : filteredTransactions.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-16 text-center text-[#929090]">
+                      <td
+                        colSpan={5}
+                        className="py-16 text-center text-[#929090]"
+                      >
                         No transactions found matching your criteria.
                       </td>
                     </tr>
                   ) : (
                     filteredTransactions.map((txn) => {
                       const amountInInr = txn.amount / 100;
-                      const isSuccess = txn.status === "captured" || txn.status === "paid" || txn.status === "SUCCESS";
-                      const isPending = txn.status === "created" || txn.status === "authorized";
-                      const date = new Date(txn.created_at * 1000).toLocaleString(undefined, { 
-                        month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
+                      const isSuccess =
+                        txn.status === "captured" ||
+                        txn.status === "paid" ||
+                        txn.status === "SUCCESS";
+                      const isPending =
+                        txn.status === "created" || txn.status === "authorized";
+                      const date = new Date(
+                        txn.created_at * 1000,
+                      ).toLocaleString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit",
                       });
 
                       return (
-                        <tr key={txn.id} className="border-b border-black/[0.04] transition-colors hover:bg-[#FAFAFA]">
-                          
+                        <tr
+                          key={txn.id}
+                          className="border-b border-black/[0.04] transition-colors hover:bg-[#FAFAFA]"
+                        >
                           {/* Transaction Details */}
                           <td className="px-6 py-4">
                             <div className="flex items-center gap-3">
-                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isSuccess ? 'bg-[#28CA41]/10' : isPending ? 'bg-[#FFBD2E]/10' : 'bg-[#FF5F57]/10'}`}>
+                              <div
+                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-md ${isSuccess ? "bg-[#28CA41]/10" : isPending ? "bg-[#FFBD2E]/10" : "bg-[#FF5F57]/10"}`}
+                              >
                                 {isSuccess ? (
-                                  <ArrowUpRight size={14} className="text-[#1a8c30]" />
+                                  <ArrowUpRight
+                                    size={14}
+                                    className="text-[#1a8c30]"
+                                  />
                                 ) : isPending ? (
                                   <Clock size={14} className="text-[#9a6e00]" />
                                 ) : (
-                                  <ArrowDownLeft size={14} className="text-[#c53030]" />
+                                  <ArrowDownLeft
+                                    size={14}
+                                    className="text-[#c53030]"
+                                  />
                                 )}
                               </div>
                               <div>
-                                <p className="font-mono text-[12px] font-bold text-[#111110]">{txn.id}</p>
-                                <p className="text-[11px] text-[#929090]">{date}</p>
+                                <p className="font-mono text-[12px] font-bold text-[#111110]">
+                                  {txn.id}
+                                </p>
+                                <p className="text-[11px] text-[#929090]">
+                                  {date}
+                                </p>
                               </div>
                             </div>
                           </td>
 
                           {/* Customer Info */}
                           <td className="px-6 py-4">
-                            <p className="font-medium text-[#111110]">{txn.email || "N/A"}</p>
-                            {txn.contact && <p className="font-mono text-[11px] text-[#929090]">{txn.contact}</p>}
-                            {txn.description && <p className="mt-1 text-[11px] text-[#5B7FA6]">{txn.description}</p>}
+                            <p className="font-medium text-[#111110]">
+                              {txn.email || "N/A"}
+                            </p>
+                            {txn.contact && (
+                              <p className="font-mono text-[11px] text-[#929090]">
+                                {txn.contact}
+                              </p>
+                            )}
+                            {txn.description && (
+                              <p className="mt-1 text-[11px] text-[#5B7FA6]">
+                                {txn.description}
+                              </p>
+                            )}
                           </td>
 
                           {/* Method */}
                           <td className="px-6 py-4">
                             <div className="inline-flex items-center gap-1.5 rounded-md border border-black/5 bg-[#F2F2F2] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.04em] text-[#4C433F]">
                               <Building2 size={12} className="text-[#929090]" />
-                              {txn.method} {txn.bank ? `· ${txn.bank}` : ''}
+                              {txn.method} {txn.bank ? `· ${txn.bank}` : ""}
                             </div>
                           </td>
 
                           {/* Amount */}
                           <td className="whitespace-nowrap px-6 py-4 text-right font-mono text-[16px] font-bold text-[#111110]">
-                            ₹{amountInInr.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            ₹
+                            {amountInInr.toLocaleString("en-IN", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}
                           </td>
 
                           {/* Status */}
@@ -267,7 +333,6 @@ export default function TransactionHistoryPage() {
               </table>
             </div>
           </div>
-
         </div>
       </main>
     </div>

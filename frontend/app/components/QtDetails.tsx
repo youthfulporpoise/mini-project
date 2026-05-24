@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 
-import { QuotationDetails } from "@/app/components/QuotationDetails";
+import { QuotationDetails } from "@/app/components/QuotationDetailsById";
 import { VendorResponses } from "@/app/components/VendorResponses";
 
 export default function QtDetailsPage() {

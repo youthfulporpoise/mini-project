@@ -68,6 +68,12 @@ export default function AuthPage() {
         password: loginData.password,
       };
       const res = await performLogin(userDetails);
+      
+      if (res.data?.error) {
+        setError(res.data.error.toUpperCase());
+        return;
+      }
+
       const profileRes = await fetchProfileDetails();
       Cookies.set("userProfile", JSON.stringify(profileRes), {
         expires: 1,

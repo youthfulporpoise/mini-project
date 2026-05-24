@@ -46,13 +46,14 @@ export default function AccountantDashboard() {
           deliveryPeriod: d.delivery_period,
           qtReqVerifiedAccountant: d.qt_req_verified_accountant,
           finalQtVerifiedAccountant: d.final_qt_verified_accountant,
+          qtReqVerifiedPrincipal: d.qt_req_verified_principal, 
           qtVerifiedPrincipal: d.qt_verified_principal,
         }));
 
         // Queue 1: Needs to be forwarded to vendors
         setIncoming(
           mapped.filter(
-            (q) => !q.qtReqVerifiedAccountant && q.status !== "REJECTED",
+            (q) => !q.qtReqVerifiedAccountant && q.status !== "REJECTED" && q.qtReqVerifiedPrincipal,
           ),
         );
 

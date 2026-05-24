@@ -1,8 +1,8 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { QuotationDetails } from "@/app/components/QuotationDetails";
-import { VendorResponses } from "@/app/components/VendorResponses";
+import { QuotationDetailsById } from "@/app/components/QuotationDetailsById";
+import { VendorResponsesById } from "@/app/components/VendorResponsesById";
 
 export default function QtDetailsPage() {
   const params = useParams();
@@ -12,7 +12,9 @@ export default function QtDetailsPage() {
     return (
       <div className="flex min-h-screen bg-[#F2F2F2] font-sans">
         <div className="flex w-full items-center justify-center">
-          <p className="text-[14px] font-medium text-[#929090]">Invalid quotation ID.</p>
+          <p className="text-[14px] font-medium text-[#929090]">
+            Invalid quotation ID.
+          </p>
         </div>
       </div>
     );
@@ -20,17 +22,13 @@ export default function QtDetailsPage() {
 
   return (
     <div className="flex min-h-screen bg-[#F2F2F2] font-sans">
-
-      
       <main className="flex-1 px-[clamp(20px,4vw,40px)] py-[clamp(24px,4vw,40px)] transition-[margin-left] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] max-md:ml-[68px]">
         <div className="mx-auto flex max-w-[1200px] flex-col gap-6">
-          
           {/* Base Quotation Information */}
-          <QuotationDetails quotationId={slug} />
+          <QuotationDetailsById quotationId={slug} />
 
           {/* Submissions by Vendors */}
-          <VendorResponses quotationId={slug} />
-
+          <VendorResponsesById quotationId={slug} />
         </div>
       </main>
     </div>

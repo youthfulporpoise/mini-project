@@ -1,16 +1,25 @@
 // app/hod/layout.tsx
 import { Sidebar } from "@/app/components/Sidebar";
 import { MenuItem } from "../utility/index";
+import { fetchQuotations, fetchResponses } from "../utility/api";
 
+const responseCount = await fetchResponses();
+const qtCount = await fetchQuotations();
 const menuItems: MenuItem[] = [
   { id: 1, icon: "Home", label: "Overview", href: "/hod" },
-  { id: 2, icon: "FileText", label: "Quotations", href: "/hod/quotations" },
+  {
+    id: 2,
+    icon: "FileText",
+    label: "Quotations",
+    href: "/hod/quotations",
+    badge: qtCount ? qtCount.length : 0,
+  },
   {
     id: 3,
     icon: "MessageSquare",
     label: "Responses",
     href: "/hod/responses",
-    badge: 3,
+    badge: responseCount ? responseCount.length : 0,
   },
   {
     id: 4,

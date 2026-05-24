@@ -23,7 +23,7 @@ export default function PaymentButton({
 
     try {
       // Step 1 — load razorpay script
-      const csrfToken = Cookies.get("csrftoken");
+    
       await new Promise<void>((resolve, reject) => {
         if (document.getElementById("rzp-script")) {
           resolve();

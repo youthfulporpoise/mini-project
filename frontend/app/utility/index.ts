@@ -17,7 +17,7 @@ export interface QuotationRequest {
   client_id: string;
   quotation_id: string;
   requirements: string;
-  status: "Pending" | "Approved" | "Rejected" | "Under Review";
+  status: "Pending" | "Approved" | "Rejected" | "Under Review" | "SUCCESS";
   product_category: string;
   created_date: string;
   approved_amount?: number;
@@ -39,7 +39,7 @@ export interface VendorResponse {
   response_items: ResponseItem[];
   vendor_name?: string;
   quotation_title?: string;
-  status?: "PENDING_REVIEW" | "ACCEPTED" | "REJECTED" | "DELIVERED";
+  status?: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED" | "SUCCESS";
 }
 
 export interface Transaction {
@@ -76,11 +76,12 @@ export interface Quotation {
   description: string;
   department: string;
   submissionDeadline: string;
-  status: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED";
+  status: "PENDING" | "APPROVED" | "REJECTED" | "DELIVERED" | "SUCCESS";
   deliveryPeriod: number;
   items: QuotationItems[];
   // new fields
   qtReqVerifiedAccountant: boolean | false;
+  qtReqVerifiedPrincipal: boolean | false;
   finalQtVerifiedAccountant: boolean | false;
   qtVerifiedPrincipal: boolean | false;
 }
@@ -126,7 +127,6 @@ export interface userProfile {
   role: string;
 }
 
-
 export interface MenuItem {
   id: number;
   icon: string;
@@ -134,3 +134,39 @@ export interface MenuItem {
   href: string;
   badge?: number;
 }
+
+// Overview
+
+export type QuotationRequestRow = {
+  id: string;
+  quotationTitle: string;
+  department: string;
+  category: string;
+  status: QuotationStatus;
+  submissionDeadline: string;
+};
+
+export type QuotationStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "REJECTED"
+  | "DELIVERED"
+  | "SUCCESS";
+
+export type VendorResponseRow = {
+  quotation_id: string;
+  amount: number;
+};
+
+export type RazorpayTransaction = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  method: string;
+  bank: string | null;
+  email: string;
+  contact: string;
+  created_at: number;
+  description: string | null;
+};

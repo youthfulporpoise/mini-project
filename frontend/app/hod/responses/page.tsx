@@ -4,35 +4,60 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Users } from "lucide-react";
 
-import { fetchResponses } from "../../utility/api";
-import { VendorResponse } from "../../utility/index";
+// Added acceptedQuotations to your API imports
+import {
+  fetchQuotations,
+  fetchResponses,
+  acceptedQuotations,
+} from "../../utility/api";
+import { Quotation, VendorResponse } from "../../utility/index";
 
 export default function ResponsesPage() {
   const router = useRouter();
   const [responses, setResponses] = useState<VendorResponse[]>([]);
+  const [qt, setQt] = useState<Quotation[]>([]);
+  const [acceptedRecords, setAcceptedRecords] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadResponses = async () => {
       setIsLoading(true);
-      const data = await fetchResponses();
-      if (data) setResponses(data);
-      setIsLoading(false);
+      try {
+        // Fetch all three datasets simultaneously for better performance
+        const [responsesData, qtData, accData] = await Promise.all([
+          fetchResponses(),
+          fetchQuotations(),
+          acceptedQuotations(),
+        ]);
+
+        if (responsesData) setResponses(responsesData.reverse());
+        if (qtData) setQt(qtData);
+        if (accData) setAcceptedRecords(Array.isArray(accData) ? accData : []);
+      } catch (error) {
+        console.error("Failed to load data", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     loadResponses();
   }, []);
 
   const renderResponseStatusBadge = (status: VendorResponse["status"]) => {
     const styles = {
-      PENDING_REVIEW: "bg-[#FFBD2E]/15 text-[#9a6e00] border-[#FFBD2E]/25",
-      ACCEPTED: "bg-[#28CA41]/10 text-[#1a8c30] border-[#28CA41]/20",
+      PENDING: "bg-[#FFBD2E]/15 text-[#9a6e00] border-[#FFBD2E]/25",
+      APPROVED: "bg-[#28CA41]/10 text-[#1a8c30] border-[#28CA41]/20",
       REJECTED: "bg-[#FF5F57]/10 text-[#c53030] border-[#FF5F57]/20",
+      DELIVERED: "bg-[#007AFF]/10 text-[#0056b3] border-[#007AFF]/20",
     };
+
+    // Safely fallback to PENDING
+    const safeStatus = status || "PENDING";
+
     return (
       <span
-        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] ${styles[status] || styles.PENDING_REVIEW}`}
+        className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.04em] ${styles[safeStatus] || styles.PENDING}`}
       >
-        {status ? status.replace("_", " ") : "PENDING REVIEW"}
+        {safeStatus.replace("_", " ")}
       </span>
     );
   };
@@ -83,17 +108,17 @@ export default function ResponsesPage() {
               <table className="w-full text-left">
                 <thead className="bg-[#F2F2F2] font-mono text-[10px] font-semibold uppercase tracking-[0.06em] text-[#929090]">
                   <tr>
-                    <th className="px-4 py-3.5 whitespace-nowrap">
+                    <th className="whitespace-nowrap px-4 py-3.5">
                       Vendor & Quotation
                     </th>
-                    <th className="px-4 py-3.5 whitespace-nowrap">
+                    <th className="whitespace-nowrap px-4 py-3.5">
                       Items Offered
                     </th>
-                    <th className="px-4 py-3.5 whitespace-nowrap">
+                    <th className="whitespace-nowrap px-4 py-3.5">
                       Base Total
                     </th>
-                    <th className="px-4 py-3.5 whitespace-nowrap">Status</th>
-                    <th className="px-4 py-3.5 text-right whitespace-nowrap">
+                    <th className="whitespace-nowrap px-4 py-3.5">Status</th>
+                    <th className="whitespace-nowrap px-4 py-3.5 text-right">
                       Actions
                     </th>
                   </tr>
@@ -102,14 +127,42 @@ export default function ResponsesPage() {
                   {responses.map((res) => {
                     const baseTotal =
                       res.response_items?.reduce(
-                        (sum, item) => sum + (item.unit_price || 0),
+                        (sum, item) => sum + (Number(item.unit_price) || 0),
                         0,
                       ) || 0;
+
                     const maxDays = Math.max(
                       ...(res.response_items?.map(
                         (i) => parseInt(i.delivery_period?.split(" ")[0]) || 0,
                       ) || [0]),
                     );
+
+                    // 1. Find related quotation
+                    const relatedQuotation = qt.find(
+                      (q) => String(q.id) === String(res.quotation),
+                    );
+
+                    // 2. Find if this quotation has an accepted winning response
+                    const acceptedRecord = acceptedRecords.find(
+                      (acc) => String(acc.quotation) === String(res.quotation),
+                    );
+
+                    // 3. Calculate true status
+                    let calculatedStatus = res.status || "PENDING";
+
+                    if (acceptedRecord) {
+                      if (String(acceptedRecord.response) === String(res.id)) {
+                        // This response won! Check if it's already delivered.
+                        if (relatedQuotation?.status === "DELIVERED") {
+                          calculatedStatus = "DELIVERED";
+                        } else {
+                          calculatedStatus = "APPROVED";
+                        }
+                      } else {
+                          
+                        calculatedStatus = "REJECTED";
+                      }
+                    }
 
                     return (
                       <tr
@@ -146,9 +199,7 @@ export default function ResponsesPage() {
                           </div>
                         </td>
                         <td className="px-4 py-3.5">
-                          {renderResponseStatusBadge(
-                            res.status || "PENDING_REVIEW",
-                          )}
+                          {renderResponseStatusBadge(calculatedStatus)}
                         </td>
                         <td className="px-4 py-3.5 text-right">
                           <button

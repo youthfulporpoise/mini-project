@@ -22,11 +22,38 @@ const publicInstance = axios.create({
 });
 // This function run dynamically every time a request is hit.
 instance.interceptors.request.use(
-  (config) => {
-    const csrfToken = Cookies.get("csrftoken");
-    if (csrfToken) {
-      config.headers["X-CSRFToken"] = csrfToken;
+  async (config) => {
+    // Check if we are running on the Server (SSR)
+    if (typeof window === "undefined") {
+      // Dynamically import next/headers so it doesn't break client build
+      const { cookies } = await import("next/headers");
+      
+      // REQUIRED UPDATE FOR NEXT.JS 15: await the cookies() call
+      const cookieStore = await cookies(); 
+
+      // 1. Forward ALL cookies (crucial for Django's sessionid)
+      const cookieHeader = cookieStore
+        .getAll()
+        .map((c) => `${c.name}=${c.value}`)
+        .join("; ");
+      
+      if (cookieHeader) {
+        config.headers["Cookie"] = cookieHeader;
+      }
+
+      // 2. Attach CSRF Token
+      const csrfToken = cookieStore.get("csrftoken")?.value;
+      if (csrfToken) {
+        config.headers["X-CSRFToken"] = csrfToken;
+      }
+    } else {
+      // Check if we are running on the Client (Browser)
+      const csrfToken = Cookies.get("csrftoken");
+      if (csrfToken) {
+        config.headers["X-CSRFToken"] = csrfToken;
+      }
     }
+    
     return config;
   },
   (error) => {

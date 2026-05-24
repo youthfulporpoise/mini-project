@@ -58,13 +58,11 @@ export default function VendorResponsesPage() {
         const [allQuotations, allResponsesRes, acceptedRes] = await Promise.all(
           [fetchQuotations(), fetchResponses(), acceptedQuotations()],
         );
- console.log(allQuotations, allResponsesRes, acceptedRes )
+
         const allResponses = Array.isArray(allResponsesRes)
           ? allResponsesRes
           : allResponsesRes;
-        const acceptedData = Array.isArray(acceptedRes)
-          ? acceptedRes
-          : [];
+        const acceptedData = Array.isArray(acceptedRes) ? acceptedRes : [];
 
         // 3. Filter responses belonging ONLY to this vendor
         const vendorResponses = allResponses.filter(
@@ -97,8 +95,10 @@ export default function VendorResponsesPage() {
                 // Check if the overall quotation lifecycle is marked as DELIVERED
                 if (relatedQuotation?.status === "DELIVERED") {
                   calculatedStatus = "DELIVERED";
-                } else {
+                } else if (relatedQuotation?.status === "APPROVED") {
                   calculatedStatus = "ACCEPTED";
+                } else if (relatedQuotation?.status === "SUCCESS") {
+                  calculatedStatus = "SUCCESS";
                 }
               } else {
                 // The quotation is closed, and someone else won
@@ -126,6 +126,7 @@ export default function VendorResponsesPage() {
             ACCEPTED: 2,
             PENDING_REVIEW: 3,
             REJECTED: 4,
+            SUCCESS: 5,
           };
           return (order[a.status] || 5) - (order[b.status] || 5);
         });
@@ -160,6 +161,12 @@ export default function VendorResponsesPage() {
         return (
           <span className="inline-flex items-center gap-1 rounded-full border border-[#FF5F57]/20 bg-[#FF5F57]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#c53030]">
             <XCircle size={12} /> Not Selected
+          </span>
+        );
+      case "SUCCESS":
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#28CA41]/20 bg-[#28CA41]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.04em] text-[#1a8c30]">
+            <CheckCircle2 size={12} /> Quotation Closed
           </span>
         );
       default:
@@ -264,9 +271,11 @@ export default function VendorResponsesPage() {
           ) : (
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2 xl:grid-cols-3">
               {myResponses.map((res) => {
+                console.log(res);
                 const isDelivered = res.status === "DELIVERED";
                 const isApproved = res.status === "ACCEPTED";
                 const isRejected = res.status === "REJECTED";
+                const isCompleted = res.status === "SUCCESS";
 
                 return (
                   <div
@@ -330,6 +339,10 @@ export default function VendorResponsesPage() {
                             </span>
                             <ArrowRight size={16} />
                           </button>
+                        ) : isCompleted ? (
+                          <div className="flex w-full items-center justify-center gap-2 rounded-[9px] bg-[#28CA41]/10 px-4 py-3 text-[13.5px] font-bold text-[#1a8c30]">
+                            <CheckCheck size={16} /> Quotation Closed
+                          </div>
                         ) : isRejected ? (
                           <button
                             disabled
